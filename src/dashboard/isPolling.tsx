@@ -21,7 +21,9 @@ const PollingManager: React.FC = () => {
 
   // --- Socket setup ---
   useEffect(() => {
-    const socket: Socket = io("https://backend-prod-530t.onrender.com");
+    const socket: Socket = io("https://backend-prod-530t.onrender.com", {
+      withCredentials: true,
+    });
 
     socket.on("pollingStatusUpdated", (updated: Selection) => {
       setSelections((prev) =>
