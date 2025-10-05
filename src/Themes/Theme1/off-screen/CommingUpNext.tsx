@@ -164,13 +164,13 @@ const CommingUpNext: React.FC<CommingUpNextProps> = ({ tournament, round, match 
   {(() => {
     switch (nextMatch.map?.toLowerCase()) {
       case "erangel":
-        return <img src="/erag.png" alt="Erangel" className="h-full object-contain" />;
+        return <img src="https://res.cloudinary.com/dqckienxj/image/upload/v1759656542/erag_ijugzi.png" alt="Erangel" className="h-full object-contain" />;
       case "miramar":
-        return <img src="/miramar.png" alt="Miramar" className="h-full object-contain" />;
+        return <img src="https://res.cloudinary.com/dqckienxj/image/upload/v1759656542/miramar_leezqf.png" alt="Miramar" className="h-full object-contain" />;
       case "sanhok":
-        return <img src="/sanhok.png" alt="Sanhok" className="h-full object-contain" />;
+        return <img src="https://res.cloudinary.com/dqckienxj/image/upload/v1759656543/sanhok_kojxj7.png" alt="Sanhok" className="h-full object-contain" />;
       case "rondo":
-        return <img src="/rondo.png" alt="Rondo" className="h-full object-contain" />;
+        return <img src="https://res.cloudinary.com/dqckienxj/image/upload/v1759656543/rondo_huj3bl.png" alt="Rondo" className="h-full object-contain" />;
       default:
         return <span>No map selected</span>;
     }
