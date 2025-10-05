@@ -561,7 +561,7 @@ const totalPlayers = useMemo(() => (
 >
   {/* Extra links */}
 <a
-  href="http://localhost:3001/teams"
+  href="https://scoresync-v1.vercel.app/teams"
   target="_blank"
   rel="noopener noreferrer"
   style={{
@@ -581,7 +581,7 @@ const totalPlayers = useMemo(() => (
 </a>
 
 <a
-  href="http://localhost:3001/displayhud"
+  href="https://scoresync-v1.vercel.app/displayhud"
   target="_blank"
   rel="noopener noreferrer"
   style={{
