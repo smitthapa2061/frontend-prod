@@ -47,13 +47,13 @@ interface ScheduleProps {
 const getMapImage = (mapName?: string) => {
   switch (mapName?.toLowerCase()) {
     case "erangel":
-      return "/erag.png";
+      return "https://res.cloudinary.com/dqckienxj/image/upload/v1759656542/erag_ijugzi.png";
     case "miramar":
-      return "/miramar.png";
+      return "https://res.cloudinary.com/dqckienxj/image/upload/v1759656542/miramar_leezqf.png";
     case "sanhok":
-      return "/sanhok.png";
+      return "https://res.cloudinary.com/dqckienxj/image/upload/v1759656543/sanhok_kojxj7.png";
     case "rondo":
-      return "/rondo.png";
+      return "https://res.cloudinary.com/dqckienxj/image/upload/v1759656543/rondo_huj3bl.png";
     default:
       return null;
   }

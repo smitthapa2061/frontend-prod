@@ -109,7 +109,7 @@ letterSpacing={1} // <-- adjust letter spacing as needed
   width={400}
   height={200}
   preserveAspectRatio="xMidYMid meet"
-  href="/grunge.png"
+  href="https://res.cloudinary.com/dqckienxj/image/upload/v1759656543/grunge_ydvz3r.png"
 />
 
         
