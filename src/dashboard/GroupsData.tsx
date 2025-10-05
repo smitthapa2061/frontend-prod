@@ -132,6 +132,17 @@ const Group: React.FC<GroupProps> = ({ onSelectionChange }) => {
       }
     }
 
+    // Verify all selected teams still exist in the teams array
+    const invalidTeams = selectedTeams.filter(st => 
+      !teams.find(t => t._id === st.teamId)
+    );
+
+    if (invalidTeams.length > 0) {
+      alert('Some selected teams no longer exist. Please refresh and try again.');
+      await fetchTeams(); // Refresh team list
+      return;
+    }
+
     try {
       const payload = {
         groupName,
@@ -151,7 +162,15 @@ const Group: React.FC<GroupProps> = ({ onSelectionChange }) => {
       fetchGroups(true);
     } catch (err: any) {
       console.error("Failed to submit group:", err);
-      alert(err.response?.data?.message || "Failed to submit group. Please try again.");
+      const errorMsg = err.response?.data?.message || "Failed to submit group. Please try again.";
+      const missingTeams = err.response?.data?.missingTeamIds;
+      
+      if (missingTeams && missingTeams.length > 0) {
+        alert(`${errorMsg}\n\nMissing team IDs: ${missingTeams.join(', ')}\n\nPlease refresh the page and try again.`);
+        await fetchTeams(); // Refresh team list
+      } else {
+        alert(errorMsg);
+      }
     }
   };
 
