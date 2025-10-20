@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
 import api from "../login/api.tsx";
-import { io, Socket } from "socket.io-client";
+import SocketManager from "./socketManager.tsx";
 
 interface Selection {
   _id: string;
   matchId: string;
-  roundId: string;
+  roundId: {
+    _id: string;
+    apiEnable: boolean;
+    roundName: string;
+  };
   tournamentId: string;
   createdAt: string;
   isSelected: boolean;
@@ -21,56 +25,86 @@ const PollingManager: React.FC = () => {
 
   // --- Socket setup ---
   useEffect(() => {
-    const socket: Socket = io("https://backend-prod-530t.onrender.com", {
-      withCredentials: true,
-    });
+    const socketManager = SocketManager.getInstance();
+    const socket = socketManager.connect();
+
+    console.log("Socket connected");
 
     socket.on("pollingStatusUpdated", (updated: Selection) => {
-      setSelections((prev) =>
-        prev.map((s) =>
+      console.log("Socket: pollingStatusUpdated received:", updated);
+      setSelections((prev) => {
+        const newSelections = prev.map((s) =>
           s._id === updated._id
             ? { ...s, isPollingActive: updated.isPollingActive }
             : s
-        )
-      );
+        );
+
+        // Update button state if the updated selection is the active match
+        if (updated._id === activeMatchId) {
+          const activeSelection = newSelections.find(s => s._id === activeMatchId);
+          const hasApiEnabled = typeof activeSelection?.roundId === 'object' ? activeSelection.roundId.apiEnable : false;
+          const newButtonState = updated.isPollingActive && hasApiEnabled;
+          setButtonState(newButtonState);
+          console.log("Button state updated to:", newButtonState, "for match:", updated._id, "api enabled:", hasApiEnabled, "polling active:", updated.isPollingActive);
+        }
+
+        return newSelections;
+      });
     });
 
     socket.on("matchSelected", ({ selected }: { selected: Selection }) => {
+      console.log("Socket: matchSelected event received:", selected);
       setSelections((prev) => {
-        const index = prev.findIndex((s) => s._id === selected._id);
+        // First, set all selections to not selected
+        const updatedPrev = prev.map(s => ({ ...s, isSelected: false }));
+
+        const index = updatedPrev.findIndex((s) => s._id === selected._id);
         if (index !== -1) {
-          const updated = [...prev];
-          updated[index] = { ...updated[index], isSelected: true };
-          return updated;
+          updatedPrev[index] = { ...selected, isSelected: true };
+          return updatedPrev;
         } else {
-          return [...prev, { ...selected, isSelected: true }];
+          return [...updatedPrev, { ...selected, isSelected: true }];
         }
       });
 
-      // Reset active match to the newly selected match
+      // Set active match to the newly selected match
+      console.log("Setting active match to:", selected._id, "polling active:", selected.isPollingActive);
       setActiveMatchId(selected._id);
+      // Set button state based on polling status and API enable
+      const hasApiEnabled = typeof selected.roundId === 'object' ? selected.roundId.apiEnable : false;
+      setButtonState(selected.isPollingActive && hasApiEnabled);
+      console.log("Button state set to:", selected.isPollingActive && hasApiEnabled, "for new match:", selected._id);
     });
 
-    socket.on("matchDeselected", ({ matchId }: { matchId: string }) => {
+    socket.on("matchDeselected", ({ matchId, tournamentId, roundId, userId }: { matchId: string, tournamentId: string, roundId: string, userId: string }) => {
+      console.log("Socket: matchDeselected received:", { matchId, tournamentId, roundId, userId });
       setSelections((prev) =>
         prev.map((s) =>
-          s._id === matchId ? { ...s, isSelected: false } : s
+          s._id === matchId ? { ...s, isSelected: false, isPollingActive: false } : s
         )
       );
 
-      if (activeMatchId === matchId) setActiveMatchId(null);
+      if (activeMatchId === matchId) {
+        console.log("Clearing active match due to deselection");
+        setActiveMatchId(null);
+      }
     });
 
-    socket.on("matchDeleted", ({ matchId }: { matchId: string }) => {
+    socket.on("matchDeleted", ({ matchId, userId }: { matchId: string, userId: string }) => {
+      console.log("Socket: matchDeleted received:", { matchId, userId });
       setSelections((prev) => prev.filter((s) => s._id !== matchId));
 
-      if (activeMatchId === matchId) setActiveMatchId(null);
+      if (activeMatchId === matchId) {
+        console.log("Clearing active match due to deletion");
+        setActiveMatchId(null);
+      }
     });
 
     return () => {
-      socket.disconnect();
+      console.log("Socket disconnected");
+      socketManager.disconnect();
     };
-  }, [activeMatchId]);
+  }, []);
 
   // --- Fetch initial selections ---
   useEffect(() => {
@@ -82,7 +116,19 @@ const PollingManager: React.FC = () => {
         );
         setSelections(uniqueSelections);
         if (uniqueSelections.length > 0) {
-          setActiveMatchId(uniqueSelections[0]._id); // default to first selected
+          // Prioritize API-enabled rounds for initial selection
+          const apiEnabledSelections = uniqueSelections.filter(s =>
+            typeof s.roundId === 'object' ? s.roundId.apiEnable : false
+          );
+          const firstSelected = apiEnabledSelections.length > 0
+            ? (apiEnabledSelections.find(s => s.isSelected) || apiEnabledSelections[0])
+            : (uniqueSelections.find(s => s.isSelected) || uniqueSelections[0]);
+
+          setActiveMatchId(firstSelected._id);
+          // Set initial button state based on polling status and API enable
+          const hasApiEnabled = typeof firstSelected.roundId === 'object' ? firstSelected.roundId.apiEnable : false;
+          setButtonState(firstSelected.isPollingActive && hasApiEnabled);
+          console.log("Initial active match:", firstSelected._id, "round:", typeof firstSelected.roundId === 'object' ? firstSelected.roundId.roundName : 'unknown', "api enabled:", hasApiEnabled);
         }
       })
       .catch(console.error)
@@ -91,8 +137,14 @@ const PollingManager: React.FC = () => {
 
   // --- Reset button state when active match changes ---
   useEffect(() => {
-    setButtonState(false); // Always start OFF on match change
+    console.log("Active match changed to:", activeMatchId, "setting button to: false");
+    setButtonState(false);
   }, [activeMatchId]);
+
+  // --- Force re-render when buttonState changes ---
+  useEffect(() => {
+    console.log("Button state is now:", buttonState);
+  }, [buttonState]);
 
   // --- Toggle polling for current active match ---
   const handleTogglePollingForActive = async () => {
@@ -101,13 +153,23 @@ const PollingManager: React.FC = () => {
     const match = selections.find((s) => s._id === activeMatchId);
     if (!match) return;
 
-    const newState = !buttonState; // use buttonState to track visual toggle
+    // Check if API is enabled for this round
+    const hasApiEnabled = typeof match.roundId === 'object' ? match.roundId.apiEnable : false;
+    const roundId = typeof match.roundId === 'object' ? match.roundId._id : match.roundId;
+    if (!hasApiEnabled) {
+      console.log("Cannot toggle polling: API not enabled for round", roundId, "match", match.matchId);
+      return;
+    }
+
+    const currentMatch = selections.find((s) => s._id === activeMatchId);
+    const newState = !currentMatch?.isPollingActive; // use actual polling state from DB
     setButtonState(newState);
 
     setUpdating(true);
     try {
+      const roundId = typeof match.roundId === 'object' ? match.roundId._id : match.roundId;
       await api.patch(
-        `/matchSelection/${match.tournamentId}/${match.roundId}/${match.matchId}/polling`,
+        `/matchSelection/${match.tournamentId}/${roundId}/${match.matchId}/polling`,
         { isPollingActive: newState }
       );
 

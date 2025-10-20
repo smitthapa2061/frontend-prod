@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SocketManager from '../../../dashboard/socketManager.tsx';
 
@@ -31,20 +31,19 @@ interface Player {
   killNum: number;
   bHasDied: boolean;
   picUrl?: string;
-
-  // Live stats fields
   health: number;
   healthMax: number;
-  liveState: number; // 0 = knocked, 5 = dead, etc.
+  liveState: number;
 }
 
 interface Team {
   _id: string;
   teamTag: string;
+  teamId?: string;
   slot?: number;
   placePoints: number;
   players: Player[];
-  teamLogo:string;
+  teamLogo: string;
 }
 
 interface MatchData {
@@ -59,247 +58,16 @@ interface DomProps {
   matchData?: MatchData | null;
 }
 
-const Dom: React.FC<DomProps> = ({ tournament, round, match, matchData }) => {
+const Dom: React.FC<DomProps> = React.memo(({ tournament, round, match, matchData }) => {
   const [localMatchData, setLocalMatchData] = useState<MatchData | null>(matchData || null);
   const [matchDataId, setMatchDataId] = useState<string | null>(matchData?._id?.toString() || null);
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
-  const [socketStatus, setSocketStatus] = useState<string>('disconnected');
-  const [updateCount, setUpdateCount] = useState<number>(0);
+  const [isVisible, setIsVisible] = useState<boolean>(false);
+  const [displayedPlayer, setDisplayedPlayer] = useState<(Player & { teamTag: string; teamLogo: string; milestone: string }) | null>(null);
 
-  // Track all milestone achievements
-  const [milestoneAchievements, setMilestoneAchievements] = useState<Map<string, { player: Player & { teamTag: string; teamLogo: string }; milestone: string; timestamp: number }>>(new Map());
-
-  // Track visibility for animation
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    if (matchData) {
-      console.log('Dom: Received new matchData prop, updating local state');
-      setLocalMatchData(matchData);
-      setMatchDataId(matchData._id?.toString());
-      setLastUpdateTime(Date.now());
-    }
-  }, [matchData]);
-
-  useEffect(() => {
-    if (!match?._id || !matchDataId) return;
-
-    console.log('Setting up real-time listeners for Dom - match:', match._id, 'matchData:', matchDataId);
-
-    // Get a fresh socket connection from the manager
-    const socketManager = SocketManager.getInstance();
-    const freshSocket = socketManager.connect();
-
-    console.log('Socket connected:', freshSocket?.connected);
-    console.log('Socket ID:', freshSocket?.id);
-
-    // Update initial status
-    setSocketStatus(freshSocket?.connected ? 'connected' : 'disconnected');
-
-    // Test socket connection
-    freshSocket.emit('test', 'Dom component connected');
-
-    // Log all incoming events for debugging
-    const debugHandler = (eventName: string, data: any) => {
-      console.log(`Dom: Received ${eventName}:`, data);
-    };
-
-    freshSocket.onAny(debugHandler);
-
-    // Create unique event handler names to avoid conflicts with dashboard
-    const domHandlers = {
-      handleLiveUpdate: (data: any) => {
-        console.log('Dom: Received liveMatchUpdate for match:', data.matchId);
-
-        // The data is the entire MatchData object, so we need to check if it matches our current match
-        if (data.matchId?.toString() === match._id?.toString()) {
-          console.log('Dom: Updating localMatchData with live API data');
-          setLocalMatchData(data);
-          setLastUpdateTime(Date.now());
-          setUpdateCount(prev => prev + 1);
-        }
-      },
-
-      handleMatchDataUpdate: (data: any) => {
-        console.log('Dom: Received matchDataUpdated:', data);
-        if (data.matchDataId === matchDataId) {
-          setLocalMatchData((prev: MatchData | null) => {
-            if (!prev) return prev;
-            const updatedTeams = prev.teams.map((team: any) => {
-              // Check both _id and teamId for team matching
-              if (team._id === data.teamId || team.teamId === data.teamId) {
-                const changes = data.changes || {};
-                const nextTeam: any = { ...team, ...changes };
-                if (Array.isArray(changes.players)) {
-                  const updatesById = new Map(
-                    changes.players.map((p: any) => [p._id?.toString?.() || p._id, p])
-                  );
-                  nextTeam.players = team.players.map((p: Player) => {
-                    const key = p._id?.toString?.() || p._id;
-                    const upd = updatesById.get(key);
-                    return upd ? { ...p, ...upd } : p;
-                  });
-                }
-                return nextTeam;
-              }
-              return team;
-            });
-            return { ...prev, teams: updatedTeams };
-          });
-          setLastUpdateTime(Date.now());
-          setUpdateCount(prev => prev + 1);
-        }
-      },
-
-      handlePlayerUpdate: (data: any) => {
-        console.log('Dom: Received playerStatsUpdated:', data);
-        if (data.matchDataId === matchDataId) {
-          setLocalMatchData((prev: MatchData | null) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              teams: prev.teams.map((team: any) => {
-                // Check both _id and teamId for team matching
-                if (team._id === data.teamId || team.teamId === data.teamId) {
-                  return {
-                    ...team,
-                    players: team.players.map((player: Player) =>
-                      player._id === data.playerId
-                        ? { ...player, ...data.updates }
-                        : player
-                    ),
-                  };
-                }
-                return team;
-              }),
-            };
-          });
-          setLastUpdateTime(Date.now());
-        }
-      },
-
-      handleTeamPointsUpdate: (data: any) => {
-        console.log('Dom: Received team points update:', data);
-        if (data.matchDataId === matchDataId) {
-          setLocalMatchData((prev: MatchData | null) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              teams: prev.teams.map((team: any) => {
-                // Check both _id and teamId for team matching
-                if (team._id === data.teamId || team.teamId === data.teamId) {
-                  return {
-                    ...team,
-                    placePoints: data.changes?.placePoints ?? team.placePoints,
-                  };
-                }
-                return team;
-              }),
-            };
-          });
-          setLastUpdateTime(Date.now());
-        }
-      },
-
-      handleTeamStatsUpdate: (data: any) => {
-        console.log('Dom: Received teamStatsUpdated:', data);
-        if (data.matchDataId === matchDataId) {
-          setLocalMatchData((prev: MatchData | null) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              teams: prev.teams.map((team: any) => {
-                // Check both _id and teamId for team matching
-                if (team._id === data.teamId || team.teamId === data.teamId) {
-                  // Update player kill numbers if provided
-                  const updatedPlayers = data.players ?
-                    team.players.map((player: any) => {
-                      const playerUpdate = data.players.find((p: any) => p._id === player._id);
-                      return playerUpdate ? { ...player, killNum: playerUpdate.killNum } : player;
-                    }) : team.players;
-
-                  return {
-                    ...team,
-                    players: updatedPlayers,
-                  };
-                }
-                return team;
-              }),
-            };
-          });
-          setLastUpdateTime(Date.now());
-        }
-      },
-
-      handleBulkTeamUpdate: (data: any) => {
-        console.log('Dom: Received bulk team update:', data);
-        if (data.matchDataId === matchDataId) {
-          setLocalMatchData((prev: MatchData | null) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              teams: prev.teams.map((team: any) => {
-                // Check both _id and teamId for team matching
-                if ((team._id === data.teamId || team.teamId === data.teamId) && data.changes?.players) {
-                  const playerUpdates = new Map(
-                    data.changes.players.map((p: any) => [p._id?.toString?.() || p._id, p])
-                  );
-                  return {
-                    ...team,
-                    players: team.players.map((player: Player) => {
-                      const key = player._id?.toString?.() || player._id;
-                      const update = playerUpdates.get(key);
-                      return update ? { ...player, ...update } : player;
-                    }),
-                  };
-                }
-                return team;
-              }),
-            };
-          });
-          setLastUpdateTime(Date.now());
-        }
-      },
-
-      handleConnect: () => {
-        console.log('Dom: Socket connected');
-        setSocketStatus('connected');
-      },
-
-      handleDisconnect: () => {
-        console.log('Dom: Socket disconnected');
-        setSocketStatus('disconnected');
-      }
-    };
-
-    // Listen to all relevant socket events with unique handlers
-    freshSocket.on('liveMatchUpdate', domHandlers.handleLiveUpdate);
-    freshSocket.on('matchDataUpdated', domHandlers.handleMatchDataUpdate);
-    freshSocket.on('playerStatsUpdated', domHandlers.handlePlayerUpdate);
-    freshSocket.on('teamPointsUpdated', domHandlers.handleTeamPointsUpdate);
-    freshSocket.on('teamStatsUpdated', domHandlers.handleTeamStatsUpdate);
-    freshSocket.on('bulkTeamUpdate', domHandlers.handleBulkTeamUpdate);
-    freshSocket.on('connect', domHandlers.handleConnect);
-    freshSocket.on('disconnect', domHandlers.handleDisconnect);
-
-    return () => {
-      console.log('Dom: Cleaning up socket listeners');
-      // Clean up debug handler
-      freshSocket.offAny();
-
-      // Clean up with the exact same handler references
-      freshSocket.off('liveMatchUpdate', domHandlers.handleLiveUpdate);
-      freshSocket.off('matchDataUpdated', domHandlers.handleMatchDataUpdate);
-      freshSocket.off('playerStatsUpdated', domHandlers.handlePlayerUpdate);
-      freshSocket.off('teamPointsUpdated', domHandlers.handleTeamPointsUpdate);
-      freshSocket.off('teamStatsUpdated', domHandlers.handleTeamStatsUpdate);
-      freshSocket.off('bulkTeamUpdate', domHandlers.handleBulkTeamUpdate);
-      freshSocket.off('connect', domHandlers.handleConnect);
-      freshSocket.off('disconnect', domHandlers.handleDisconnect);
-      // Notify socket manager that this component is done with the socket
-      socketManager.disconnect();
-    };
-  }, [match?._id, matchDataId]);
+  // Refs to prevent loops
+  const prevDataRef = useRef<any[]>([]);
+  const prevKillsMap = useRef<{ [key: string]: number }>({});
+  const displayTimerRef = useRef<number | null>(null);
 
   // Get kill streak message
   const getKillStreakMessage = (kills: number) => {
@@ -319,78 +87,201 @@ const Dom: React.FC<DomProps> = ({ tournament, round, match, matchData }) => {
     }
   };
 
-  // Add effect to handle prop changes and force re-render
-  useEffect(() => {
-    if (matchData && matchData._id?.toString() !== matchDataId) {
-      console.log('MatchData prop changed, updating local state');
-      setLocalMatchData(matchData);
-      setMatchDataId(matchData._id?.toString());
+  // Handle socket updates with loop prevention
+  const handleSocketUpdate = useCallback((data: any) => {
+    // Handle different event types
+    let updatedMatchData: MatchData | null = localMatchData;
+
+    if (data._id?.toString() === matchDataId && data.teams) {
+      // Full match data update (liveMatchUpdate, matchDataUpdated)
+      updatedMatchData = data;
+    } else if (data.matchDataId === matchDataId && data.teamId && data.players) {
+      // Player stats update
+      if (localMatchData) {
+        updatedMatchData = {
+          ...localMatchData,
+          teams: localMatchData.teams.map(team =>
+            team._id === data.teamId || team.teamId === data.teamId
+              ? {
+                  ...team,
+                  players: team.players.map(player =>
+                    data.players.find((p: any) => p._id === player._id)
+                      ? { ...player, ...data.players.find((p: any) => p._id === player._id) }
+                      : player
+                  )
+                }
+              : team
+          )
+        };
+      }
+    } else if (data.matchDataId === matchDataId && data.teamId && data.changes?.players) {
+      // Bulk team update
+      if (localMatchData) {
+        updatedMatchData = {
+          ...localMatchData,
+          teams: localMatchData.teams.map(team =>
+            team._id === data.teamId || team.teamId === data.teamId
+              ? {
+                  ...team,
+                  players: team.players.map(player => {
+                    const update = data.changes.players.find((p: any) => p._id?.toString() === player._id?.toString());
+                    return update ? { ...player, ...update } : player;
+                  })
+                }
+              : team
+          )
+        };
+      }
     }
-  }, [matchData, matchDataId]);
 
-  // Check for new milestone achievements
+    if (updatedMatchData) {
+      // Process data like the reference example - only compare kill numbers
+      const combinedData = updatedMatchData.teams.flatMap(team =>
+        team.players.map(player => ({
+          _id: player._id,
+          killNum: player.killNum || 0
+        }))
+      ).sort((a, b) => a._id.localeCompare(b._id));
+
+      const prevDataSorted = prevDataRef.current.sort((a: any, b: any) => a._id.localeCompare(b._id));
+
+      if (JSON.stringify(combinedData) !== JSON.stringify(prevDataSorted)) {
+        console.log('Dom: Kill data changed, updating localMatchData');
+        prevDataRef.current = combinedData;
+        setLocalMatchData(updatedMatchData);
+      } else {
+        console.log('Dom: Kill data unchanged, skipping update');
+      }
+    }
+  }, [matchDataId, localMatchData]);
+
+  // Update local state when props change - only reset on new match
   useEffect(() => {
-    if (!localMatchData) return;
+    if (matchData) {
+      const newMatchDataId = matchData._id?.toString();
+      if (newMatchDataId !== matchDataId) {
+        // New match - reset everything
+        setLocalMatchData(matchData);
+        setMatchDataId(newMatchDataId);
+        setIsVisible(false);
+        setDisplayedPlayer(null);
+        prevDataRef.current = [];
+        prevKillsMap.current = {};
+        if (displayTimerRef.current) {
+          clearTimeout(displayTimerRef.current);
+          displayTimerRef.current = null;
+        }
+      } else if (!localMatchData) {
+        // Initial load
+        setLocalMatchData(matchData);
+      }
+      // Don't update localMatchData from props if it's the same match - let socket handle updates
+    }
+  }, [matchData, matchDataId, localMatchData]);
 
-    const newAchievements = new Map(milestoneAchievements);
+  // Socket setup
+  useEffect(() => {
+    if (!matchDataId) return;
 
+    const socketManager = SocketManager.getInstance();
+    const freshSocket = socketManager.connect();
+
+    // Listen to events that can update match data
+    freshSocket.off('liveMatchUpdate');
+    freshSocket.off('matchDataUpdated');
+    freshSocket.off('playerStatsUpdated');
+    freshSocket.off('teamStatsUpdated');
+    freshSocket.off('bulkTeamUpdate');
+
+    freshSocket.on('liveMatchUpdate', handleSocketUpdate);
+    freshSocket.on('matchDataUpdated', handleSocketUpdate);
+    freshSocket.on('playerStatsUpdated', handleSocketUpdate);
+    freshSocket.on('teamStatsUpdated', handleSocketUpdate);
+    freshSocket.on('bulkTeamUpdate', handleSocketUpdate);
+
+    return () => {
+      freshSocket.off('liveMatchUpdate');
+      freshSocket.off('matchDataUpdated');
+      freshSocket.off('playerStatsUpdated');
+      freshSocket.off('teamStatsUpdated');
+      freshSocket.off('bulkTeamUpdate');
+      socketManager.disconnect();
+    };
+  }, [matchDataId, handleSocketUpdate]);
+
+  // Milestone detection with loop prevention using useMemo
+  const milestoneAchiever = useMemo(() => {
+    if (!localMatchData || isVisible || displayTimerRef.current) return null;
+
+    let achiever: (Player & { teamTag: string; teamLogo: string; milestone: string }) | null = null;
+    let highestMilestoneLevel = 0;
+
+    // Find the player with the highest new milestone
     for (const team of localMatchData.teams) {
       for (const player of team.players) {
-        const kills = player.killNum || 0;
-        const currentMilestone = getKillStreakMessage(kills);
+        const playerName = player.playerName;
+        const currentKills = player.killNum || 0;
+        const previousKills = prevKillsMap.current[playerName] || 0;
 
-        if (currentMilestone) {
-          const playerKey = player._id;
-          const existingAchievement = newAchievements.get(playerKey);
-
-          // Check if this is a new milestone or higher milestone for the same player
-          const shouldUpdate =
-            !existingAchievement || // New player
-            getMilestoneLevel(currentMilestone) > getMilestoneLevel(existingAchievement.milestone); // Higher milestone
-
-          if (shouldUpdate) {
-            console.log('Dom: New milestone achieved -', currentMilestone, 'by', player.playerName, 'with', kills, 'kills');
-            newAchievements.set(playerKey, {
-              player: { ...player, teamTag: team.teamTag, teamLogo: team.teamLogo },
-              milestone: currentMilestone,
-              timestamp: Date.now()
-            });
-          }
+        if (currentKills >= 8 && previousKills < 8) {
+          achiever = {
+            ...player,
+            teamTag: team.teamTag,
+            teamLogo: team.teamLogo,
+            milestone: 'UNSTOPPABLE'
+          };
+          highestMilestoneLevel = 3;
+          break;
+        } else if (currentKills >= 5 && previousKills < 5) {
+          achiever = {
+            ...player,
+            teamTag: team.teamTag,
+            teamLogo: team.teamLogo,
+            milestone: 'RAMPAGE'
+          };
+          highestMilestoneLevel = 2;
+        } else if (currentKills >= 3 && previousKills < 3 && highestMilestoneLevel < 2) {
+          achiever = {
+            ...player,
+            teamTag: team.teamTag,
+            teamLogo: team.teamLogo,
+            milestone: 'DOMINATION'
+          };
+          highestMilestoneLevel = 1;
         }
       }
+      if (achiever) break;
     }
 
-    setMilestoneAchievements(newAchievements);
-  }, [localMatchData, lastUpdateTime]);
+    return achiever;
+  }, [localMatchData, isVisible]);
 
-  // Get the most recent milestone achiever
-  const displayedPlayer = useMemo(() => {
-    if (milestoneAchievements.size === 0) return null;
-
-    let mostRecent: { player: Player & { teamTag: string; teamLogo: string }; milestone: string; timestamp: number } | null = null;
-
-    for (const achievement of milestoneAchievements.values()) {
-      if (!mostRecent || achievement.timestamp > mostRecent.timestamp) {
-        mostRecent = achievement;
-      }
-    }
-
-    return mostRecent ? { ...mostRecent.player, milestone: mostRecent.milestone } : null;
-  }, [milestoneAchievements]);
-
-  // Show/hide animation with timeout
+  // Handle milestone display
   useEffect(() => {
-    if (displayedPlayer) {
+    if (milestoneAchiever) {
+      console.log('Dom: Milestone achieved -', milestoneAchiever.playerName, 'with', milestoneAchiever.killNum, 'kills,', milestoneAchiever.milestone);
+
+      // Update kills map
+      const newKillsMap = { ...prevKillsMap.current };
+      for (const team of localMatchData!.teams) {
+        for (const player of team.players) {
+          newKillsMap[player.playerName] = player.killNum || 0;
+        }
+      }
+      prevKillsMap.current = newKillsMap;
+
+      setDisplayedPlayer(milestoneAchiever);
       setIsVisible(true);
 
       // Hide after 5 seconds
-      const timeout = setTimeout(() => {
+      displayTimerRef.current = window.setTimeout(() => {
+        console.log('Dom: Hiding milestone display after 5 seconds');
         setIsVisible(false);
+        setDisplayedPlayer(null);
+        displayTimerRef.current = null;
       }, 5000);
-
-      return () => clearTimeout(timeout);
     }
-  }, [displayedPlayer]);
+  }, [milestoneAchiever, localMatchData]);
 
   if (!localMatchData) {
     return (
@@ -400,117 +291,79 @@ const Dom: React.FC<DomProps> = ({ tournament, round, match, matchData }) => {
     );
   }
 
-  // Dom component UI
+  if (!isVisible || !displayedPlayer) {
+    return null;
+  }
+
   return (
-    <div className="w-[1920px] h-[1080px] flex justify-start items-center relative ">
-
- 
-
+    <div className="w-[1920px] h-[1080px] flex justify-start items-center relative  ">
       <AnimatePresence>
         {isVisible && displayedPlayer && (
           <motion.div
-            className="w-[300px] h-[300px] bg-[#0000009d]  "
-            initial={{ opacity: 0, scale: 0.8, y: 50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: -50 }}
-            transition={{
-              duration: 0.5,
-              ease: "easeOut"
-            }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.5 }}
+            className="w-[300px] h-[300px] bg-[#0000009d] absolute top-[340px] left-0"
           >
-
-
             {/* Team Logo */}
-            <motion.div
-              className="w-[120px] h-[120px] "
-              initial={{ x: -50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
-<div 
-style={{
-    background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`
-}}
-className='w-[70%] h-[70%] bg-white relative left-[240px] top-[-30px]'>
+            <div className="w-[120px] h-[120px]">
+              <div
+                style={{
+                  background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`
+                }}
+                className='w-[70%] h-[70%] bg-white relative left-[240px] top-[-30px]'
+              >
+                <img
+                  src={displayedPlayer.teamLogo || "https://res.cloudinary.com/dqckienxj/image/upload/v1759393783/default1_ypnvsb.png"}
+                  alt={displayedPlayer.teamTag}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </div>
 
-<img
-                src={displayedPlayer.teamLogo}
-                alt={displayedPlayer.teamTag}
-                className="w-full h-full object-contain"
-              />
-</div>
-
-             
-            </motion.div>
-
-    {/* Player Image */}
-    <motion.div
-              className="w-[300px] h-[290px] relative top-[-110px]"
-              initial={{ x: 50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
+            {/* Player Image */}
+            <div className="w-[300px] h-[290px] relative top-[-110px]">
               <img
                 src={displayedPlayer.picUrl || 'https://res.cloudinary.com/dqckienxj/image/upload/v1735718663/defult_chach_apsjhc_jydubc.png'}
                 alt={displayedPlayer.playerName}
-                className="w-full h-full  "
+                className="w-full h-full"
               />
-            </motion.div>
-
-           
+            </div>
 
             {/* Player Info */}
-            <motion.div
-              className="flex-1 text-center"
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
+            <div className="flex-1 text-center">
               {/* Kill Streak Message */}
-              <motion.div
-              style={{
-                background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`
-              }}
-                className="text-4xl font-bold text-yellow-400 p-[10px] w-[300px] tracking-wider font-[Righteous] relative top-[-120px] "
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.4, duration: 0.6, type: "spring", stiffness: 200 }}
+              <div
+                style={{
+                  background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`
+                }}
+                className="text-4xl font-bold text-yellow-400 p-[10px] w-[300px] tracking-wider font-[Righteous] relative top-[-120px]"
               >
                 {displayedPlayer.milestone}
-              </motion.div>
+              </div>
 
               {/* Player Name */}
-
-              <motion.div
-                className="text-2xl font-bold text-black bg-white w-[300px] h-[40px] top-[-135px] relative "
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.4 }}
-              >
+              <div className="text-2xl font-bold text-black bg-white w-[300px] h-[40px] top-[-135px] relative">
                 {displayedPlayer.playerName}
-              </motion.div>
+              </div>
 
-           
               {/* Kill Count */}
-              <motion.div
-               style={{
-                background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`
-              }}
+              <div
+                style={{
+                  background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`
+                }}
                 className="text-4xl font-bold text-white relative top-[-140px]"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.7, duration: 0.5 }}
               >
                 {displayedPlayer.killNum} KILLS
-              </motion.div>
-            </motion.div>
-
-        
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
-};
+});
 
 export default Dom;
+

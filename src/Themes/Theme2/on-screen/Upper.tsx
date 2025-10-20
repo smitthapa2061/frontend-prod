@@ -30,12 +30,11 @@ interface Player {
   killNum: number;
   bHasDied: boolean;
   picUrl?: string;
-  
+
   // Live stats fields
   health: number;
   healthMax: number;
-  liveState: number; // 0,1,2,3 = alive, 4 = knocked, 5 = dead
-  damage:string
+  liveState: number; // 0 = knocked, 5 = dead, etc.
 }
 
 interface Team {
@@ -44,7 +43,7 @@ interface Team {
   slot?: number;
   placePoints: number;
   players: Player[];
-  teamLogo: string;
+  teamLogo:string;
 }
 
 interface MatchData {
@@ -52,24 +51,23 @@ interface MatchData {
   teams: Team[];
 }
 
-interface LiveFragsProps {
+interface UpperProps {
   tournament: Tournament;
   round?: Round | null;
   match?: Match | null;
   matchData?: MatchData | null;
 }
 
-const LiveFrags: React.FC<LiveFragsProps> = ({ tournament, round, match, matchData }) => {
+const Upper: React.FC<UpperProps> = ({ tournament, round, match, matchData }) => {
   const [localMatchData, setLocalMatchData] = useState<MatchData | null>(matchData || null);
   const [matchDataId, setMatchDataId] = useState<string | null>(matchData?._id?.toString() || null);
   const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
   const [socketStatus, setSocketStatus] = useState<string>('disconnected');
   const [updateCount, setUpdateCount] = useState<number>(0);
-  const [showKills, setShowKills] = useState<boolean>(true);
 
   useEffect(() => {
     if (matchData) {
-      console.log('LiveFrags: Received new matchData prop, updating local state');
+      console.log('Upper: Received new matchData prop, updating local state');
       setLocalMatchData(matchData);
       setMatchDataId(matchData._id?.toString());
       setLastUpdateTime(Date.now());
@@ -79,7 +77,7 @@ const LiveFrags: React.FC<LiveFragsProps> = ({ tournament, round, match, matchDa
   useEffect(() => {
     if (!match?._id || !matchDataId) return;
 
-    console.log('Setting up real-time listeners for LiveFrags - match:', match._id, 'matchData:', matchDataId);
+    console.log('Setting up real-time listeners for Upper - match:', match._id, 'matchData:', matchDataId);
 
     // Get a fresh socket connection from the manager
     const socketManager = SocketManager.getInstance();
@@ -92,23 +90,23 @@ const LiveFrags: React.FC<LiveFragsProps> = ({ tournament, round, match, matchDa
     setSocketStatus(freshSocket?.connected ? 'connected' : 'disconnected');
 
     // Test socket connection
-    freshSocket.emit('test', 'LiveFrags component connected');
+    freshSocket.emit('test', 'Upper component connected');
 
     // Log all incoming events for debugging
     const debugHandler = (eventName: string, data: any) => {
-      console.log(`LiveFrags: Received ${eventName}:`, data);
+      console.log(`Upper: Received ${eventName}:`, data);
     };
 
     freshSocket.onAny(debugHandler);
 
     // Create unique event handler names to avoid conflicts with dashboard
-    const liveFragsHandlers = {
+    const upperHandlers = {
       handleLiveUpdate: (data: any) => {
-        console.log('LiveFrags: Received liveMatchUpdate for match:', data.matchId);
+        console.log('Upper: Received liveMatchUpdate for match:', data.matchId);
 
         // The data is the entire MatchData object, so we need to check if it matches our current match
         if (data.matchId?.toString() === match._id?.toString()) {
-          console.log('LiveFrags: Updating localMatchData with live API data');
+          console.log('Upper: Updating localMatchData with live API data');
           setLocalMatchData(data);
           setLastUpdateTime(Date.now());
           setUpdateCount(prev => prev + 1);
@@ -116,7 +114,7 @@ const LiveFrags: React.FC<LiveFragsProps> = ({ tournament, round, match, matchDa
       },
 
       handleMatchDataUpdate: (data: any) => {
-        console.log('LiveFrags: Received matchDataUpdated:', data);
+        console.log('Upper: Received matchDataUpdated:', data);
         if (data.matchDataId === matchDataId) {
           setLocalMatchData((prev: MatchData | null) => {
             if (!prev) return prev;
@@ -147,7 +145,7 @@ const LiveFrags: React.FC<LiveFragsProps> = ({ tournament, round, match, matchDa
       },
 
       handlePlayerUpdate: (data: any) => {
-        console.log('LiveFrags: Received playerStatsUpdated:', data);
+        console.log('Upper: Received playerStatsUpdated:', data);
         if (data.matchDataId === matchDataId) {
           setLocalMatchData((prev: MatchData | null) => {
             if (!prev) return prev;
@@ -174,7 +172,7 @@ const LiveFrags: React.FC<LiveFragsProps> = ({ tournament, round, match, matchDa
       },
 
       handleTeamPointsUpdate: (data: any) => {
-        console.log('LiveFrags: Received team points update:', data);
+        console.log('Upper: Received team points update:', data);
         if (data.matchDataId === matchDataId) {
           setLocalMatchData((prev: MatchData | null) => {
             if (!prev) return prev;
@@ -197,7 +195,7 @@ const LiveFrags: React.FC<LiveFragsProps> = ({ tournament, round, match, matchDa
       },
 
       handleTeamStatsUpdate: (data: any) => {
-        console.log('LiveFrags: Received teamStatsUpdated:', data);
+        console.log('Upper: Received teamStatsUpdated:', data);
         if (data.matchDataId === matchDataId) {
           setLocalMatchData((prev: MatchData | null) => {
             if (!prev) return prev;
@@ -227,7 +225,7 @@ const LiveFrags: React.FC<LiveFragsProps> = ({ tournament, round, match, matchDa
       },
 
       handleBulkTeamUpdate: (data: any) => {
-        console.log('LiveFrags: Received bulk team update:', data);
+        console.log('Upper: Received bulk team update:', data);
         if (data.matchDataId === matchDataId) {
           setLocalMatchData((prev: MatchData | null) => {
             if (!prev) return prev;
@@ -257,40 +255,40 @@ const LiveFrags: React.FC<LiveFragsProps> = ({ tournament, round, match, matchDa
       },
 
       handleConnect: () => {
-        console.log('LiveFrags: Socket connected');
+        console.log('Upper: Socket connected');
         setSocketStatus('connected');
       },
 
       handleDisconnect: () => {
-        console.log('LiveFrags: Socket disconnected');
+        console.log('Upper: Socket disconnected');
         setSocketStatus('disconnected');
       }
     };
 
     // Listen to all relevant socket events with unique handlers
-    freshSocket.on('liveMatchUpdate', liveFragsHandlers.handleLiveUpdate);
-    freshSocket.on('matchDataUpdated', liveFragsHandlers.handleMatchDataUpdate);
-    freshSocket.on('playerStatsUpdated', liveFragsHandlers.handlePlayerUpdate);
-    freshSocket.on('teamPointsUpdated', liveFragsHandlers.handleTeamPointsUpdate);
-    freshSocket.on('teamStatsUpdated', liveFragsHandlers.handleTeamStatsUpdate);
-    freshSocket.on('bulkTeamUpdate', liveFragsHandlers.handleBulkTeamUpdate);
-    freshSocket.on('connect', liveFragsHandlers.handleConnect);
-    freshSocket.on('disconnect', liveFragsHandlers.handleDisconnect);
+    freshSocket.on('liveMatchUpdate', upperHandlers.handleLiveUpdate);
+    freshSocket.on('matchDataUpdated', upperHandlers.handleMatchDataUpdate);
+    freshSocket.on('playerStatsUpdated', upperHandlers.handlePlayerUpdate);
+    freshSocket.on('teamPointsUpdated', upperHandlers.handleTeamPointsUpdate);
+    freshSocket.on('teamStatsUpdated', upperHandlers.handleTeamStatsUpdate);
+    freshSocket.on('bulkTeamUpdate', upperHandlers.handleBulkTeamUpdate);
+    freshSocket.on('connect', upperHandlers.handleConnect);
+    freshSocket.on('disconnect', upperHandlers.handleDisconnect);
 
     return () => {
-      console.log('LiveFrags: Cleaning up socket listeners');
+      console.log('Upper: Cleaning up socket listeners');
       // Clean up debug handler
       freshSocket.offAny();
 
       // Clean up with the exact same handler references
-      freshSocket.off('liveMatchUpdate', liveFragsHandlers.handleLiveUpdate);
-      freshSocket.off('matchDataUpdated', liveFragsHandlers.handleMatchDataUpdate);
-      freshSocket.off('playerStatsUpdated', liveFragsHandlers.handlePlayerUpdate);
-      freshSocket.off('teamPointsUpdated', liveFragsHandlers.handleTeamPointsUpdate);
-      freshSocket.off('teamStatsUpdated', liveFragsHandlers.handleTeamStatsUpdate);
-      freshSocket.off('bulkTeamUpdate', liveFragsHandlers.handleBulkTeamUpdate);
-      freshSocket.off('connect', liveFragsHandlers.handleConnect);
-      freshSocket.off('disconnect', liveFragsHandlers.handleDisconnect);
+      freshSocket.off('liveMatchUpdate', upperHandlers.handleLiveUpdate);
+      freshSocket.off('matchDataUpdated', upperHandlers.handleMatchDataUpdate);
+      freshSocket.off('playerStatsUpdated', upperHandlers.handlePlayerUpdate);
+      freshSocket.off('teamPointsUpdated', upperHandlers.handleTeamPointsUpdate);
+      freshSocket.off('teamStatsUpdated', upperHandlers.handleTeamStatsUpdate);
+      freshSocket.off('bulkTeamUpdate', upperHandlers.handleBulkTeamUpdate);
+      freshSocket.off('connect', upperHandlers.handleConnect);
+      freshSocket.off('disconnect', upperHandlers.handleDisconnect);
       // Notify socket manager that this component is done with the socket
       socketManager.disconnect();
     };
@@ -305,140 +303,125 @@ const LiveFrags: React.FC<LiveFragsProps> = ({ tournament, round, match, matchDa
     }
   }, [matchData, matchDataId]);
 
-  // Toggle between kills and damage every 10 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setShowKills(prev => !prev);
-    }, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Get top 5 players by kills - recalculated on every localMatchData change
-  const topPlayers = useMemo(() => {
+  // Get top 5 teams by alive players - recalculated on every localMatchData change
+  const topTeams = useMemo(() => {
     if (!localMatchData) return [];
 
-    console.log('LiveFrags: Recalculating topPlayers at', new Date(lastUpdateTime).toLocaleTimeString());
+    console.log('Upper: Recalculating topTeams at', new Date(lastUpdateTime).toLocaleTimeString());
 
-    const allPlayers = localMatchData.teams.flatMap(team => {
-      const isTeamAllDead = team.players.every(player => player.bHasDied || player.liveState === 5);
-      return team.players.map(player => ({ ...player, teamTag: team.teamTag, teamLogo: team.teamLogo, isTeamAllDead }));
-    });
+    const useApiHealth = round?.apiEnable === true;
 
-    return allPlayers
-      .sort((a, b) => b.killNum - a.killNum)
+    return localMatchData.teams
+      .map(team => {
+        const aliveCount = team.players.filter(p => !p.bHasDied).length;
+        let wwcd: number;
+        if (useApiHealth) {
+          // API enabled - use health sum / 4
+          wwcd = Math.round(team.players.reduce((sum, p) => sum + (p.health || 0), 0) / 4);
+        } else {
+          // API disabled - count alive players (not bHasDied) * 25
+          wwcd = Math.round(aliveCount * 25);
+        }
+        return {
+          ...team,
+          totalKills: team.players.reduce((sum, p) => sum + (p.killNum || 0), 0),
+          aliveCount,
+          wwcd,
+        };
+      })
+      .filter(team => team.aliveCount > 0) // Only teams with alive players
+      .sort((a, b) => b.aliveCount - a.aliveCount)
       .slice(0, 5);
-  }, [localMatchData, lastUpdateTime]);
+  }, [localMatchData, lastUpdateTime, round?.apiEnable]);
 
   if (!localMatchData) {
     return (
-      <div className="w-[1920px] h-[1080px] bg-black flex items-center justify-center">
-        <text className="text-white text-2xl">No match data</text>
-      </div>
+      <svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg ">
+        <text x="1600" y="350" fontFamily="Arial" fontSize="24" fill="white">No match data</text>
+      </svg>
     );
   }
 
-
+  // Upper component UI
   return (
-    <div className="w-[1920px] h-[1080px] bg-transparent flex justify-end items-center relative ">
-
+    <div className="w-[1920px] h-[1080px] flex justify-center relative ">
+      <div
      
-      {/* Top 5 Players Display */}
-      <div className="w-[500px] h-[200px] ">
+        className='w-[100%] h-[500px] top-[60px] relative rounded-lg p-4 '
+      >
      
-<div className='text-black text-[1.5rem] font-[Righteous] bg-white  w-[250px] p-[2px] mb-[10px] relative left-[250px] text-center'>
-  MATCH FRAGGERS
-</div>
-        <div className="space-y-4 w-[500px] ]">
-          {topPlayers.map((player, index) => {
-            // Calculate health percentage based on API enable
-            let healthPercentage = 100;
-            if (round?.apiEnable) {
-              healthPercentage = player.healthMax > 0 ? Math.max(0, Math.min(100, (player.health / player.healthMax) * 100)) : 0;
-            } else {
-              healthPercentage = player.bHasDied ? 0 : 100;
-            }
-
-            // Check player status
-            const isAlive = [0, 1, 2, 3].includes(player.liveState);
-            const isKnocked = player.liveState === 4;
-            const isDead = player.bHasDied || player.liveState === 5;
-
-            // Determine bar color and status
-            let barColor = 'bg-gray-500';
-            let statusText = 'Dead';
-
-            if (isDead) {
-              barColor = 'bg-gray-500';
-              statusText = 'Dead';
-            } else if (isKnocked) {
-              barColor = 'bg-red-500';
-              statusText = 'Knocked';
-            } else if (isAlive) {
-              if (healthPercentage > 75) barColor = 'bg-green-500';
-              else if (healthPercentage > 50) barColor = 'bg-yellow-500';
-              else if (healthPercentage > 25) barColor = 'bg-orange-500';
-              else barColor = 'bg-red-500';
-              statusText = `${Math.round(healthPercentage)}%`;
-            }
-
-            return (
-              <div
-                key={player._id}
-                className="  flex items-center "
-                style={{
-                  background: `linear-gradient(135deg, ${tournament.primaryColor || '#333'}, ${tournament.secondaryColor || '#666'})`,
-                  opacity: player.isTeamAllDead ? 0.5 : 1
-                }}
-              >
-                {/* Rank */}
-                <div className="text-yellow-400 text-2xl font-bold  mr-[-10px] pl-[10px] font-[Righteous]">
-                  #{index + 1}
-                </div>
-
-                {/* Player Avatar */}
-                <div className="w-[100px] h-[100px] ">
-                  <img
-                    src={player.picUrl || 'https://res.cloudinary.com/dqckienxj/image/upload/v1735718663/defult_chach_apsjhc_jydubc.png'}
-                    alt={player.playerName}
-                    className="w-full h-full "
-                  />
-                </div>
-
-                {/* Player Info */}
-                <div className="flex-1">
-                  <div className="text-white text-[1.5rem]  font-bold font-[Righteous]">{player.playerName}</div>
-                  <div className="text-white text-[1rem] font-[Righteous] font-bold">{player.teamTag}</div>
-
-                  {/* Health Bar */}
-                  <div className="w-[150px] bg-gray-700 rounded-full h-4 mt-2">
-                    <div
-                      className={`h-4 rounded-full transition-all duration-500 ${barColor}`}
-                      style={{ width: `${isDead ? 0 : isKnocked ? 100 : healthPercentage}%` }}
-                    />
-                  </div>
-
-                  
-                </div>
-<div className='w-[80px] absolute left-[1710px]'>
-
-<img src={player.teamLogo} alt="" className='w-[100%] h-[100%] object-contain' />
-</div>
-                {/* Kills/Damage Toggle */}
-                <div className='flex text-white text-2xl font-bold mr-4 flex-col font-[Righteous]'>
-                  <div className='absolute left-[1860px] text-yellow-400 '>
-                    {showKills ? player.killNum : player.damage}
-                  </div>
-                  <div className='relative top-[25px]'>
-                    {showKills ? 'KILLS' : 'DAMAGE'}
-                  </div>
-                </div>
+        <div className="flex  flex-wrap gap-[50px] justify-center scale-150 ">
+          {topTeams.map((team, index) => (
+            <div 
+               style={{
+          background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`
+        }}
+            key={team._id} className="flex items-center bg-black/50 p-2 ">
+         
+              
+              <div className="w-[40px] h-[40px] mr-3">
+                <img src={team.teamLogo} alt={team.teamTag} className="w-full h-full object-contain" />
               </div>
-            );
-          })}
+              <div className="flex-1 text-white font-[400] text-[2rem] mr-[10px] font-bebas" >{team.teamTag}</div>
+              <div className="flex gap-[2px] w-[50px]   ">
+  {team.players.slice(0, 4).map((player) => {
+    const isDead = player.liveState === 5 || player.bHasDied;
+    const isAlive = [0, 1, 2, 3].includes(player.liveState);
+    const isKnocked = player.liveState === 4;
+    const useApiHealth = round?.apiEnable === true;
+
+    let barHeight = 0;
+    let barColor = "";
+
+    if (useApiHealth) {
+      // API enabled - use full health system
+      if (isDead) {
+        barHeight = 40;
+        barColor = "bg-gray-500";
+      } else if (isKnocked) {
+        const healthRatio = Math.max(0, Math.min(1, player.health / (player.healthMax || 100)));
+        barHeight = healthRatio * 40;
+        barColor = "bg-red-500";
+      } else if (isAlive) {
+        const healthRatio = Math.max(0, Math.min(1, player.health / (player.healthMax || 100)));
+        barHeight = healthRatio * 40;
+        barColor = "bg-white";
+      }
+    } else {
+      // API disabled - use simple bHasDied system
+      if (isDead) {
+        barHeight = 40;
+        barColor = "bg-gray-500";
+      } else if (isKnocked) {
+        barHeight = 40;
+        barColor = "bg-red-500";
+      } else if (isAlive) {
+        barHeight = 40;
+        barColor = "bg-white";
+      }
+    }
+
+    return (
+      <div key={player._id} className=" w-[10px] h-[40px] bg-gray-600">
+        {/* Health bar */}
+        <div
+          className={`transition-all duration-300 ${barColor}`}
+          style={{
+            height: `${barHeight}px`
+          }}
+        />
+      </div>
+    );
+  })}
+</div>
+
+              <div className="text-black bg-white w-[190px] h-[30px] font-bold absolute top-[75px] ml-[-10px] text-center text-[0.8rem] font-[Righteous] flex items-center justify-center p-[10px]">WWCD CHANCE- <span className='text-yellow-600'>{team.wwcd}%</span></div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 };
 
-export default LiveFrags;
+export default Upper;

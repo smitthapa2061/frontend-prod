@@ -1,20 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import api from '../../../login/api.tsx';
 
 interface Tournament {
   _id: string;
   tournamentName: string;
-  torLogo?: string;
-  day?: string;
   primaryColor?: string;
   secondaryColor?: string;
-  overlayBg?: string;
 }
 
 interface Round {
   _id: string;
   roundName: string;
-  day?: string;
 }
 
 interface Player {
@@ -43,12 +38,12 @@ interface OverallData {
   createdAt: string;
 }
 
-interface ChampionsProps {
+interface RunnerUpProps {
   tournament: Tournament;
   round?: Round | null;
 }
 
-const Champions: React.FC<ChampionsProps> = ({ tournament, round }) => {
+const SecondRunnerUp: React.FC<RunnerUpProps> = ({ tournament, round }) => {
   const [overallData, setOverallData] = useState<OverallData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,25 +53,10 @@ const Champions: React.FC<ChampionsProps> = ({ tournament, round }) => {
       if (!round) return;
       try {
         setLoading(true);
-
-        // Initialize empty overall data structure
-        const data: OverallData = {
-          tournamentId: tournament._id,
-          roundId: round._id,
-          userId: '',
-          teams: [],
-          createdAt: new Date().toISOString()
-        };
-
-        // Try to get overall data, but don't fail if it doesn't exist
-        try {
-          const overallUrl = `/public/tournaments/${tournament._id}/rounds/${round._id}/overall`;
-          const overallResponse = await api.get(overallUrl);
-          Object.assign(data, overallResponse.data);
-        } catch (overallError) {
-          console.log('Overall data not available, using empty data structure');
-        }
-
+        const url = `https://backend-prod-530t.onrender.com/api/public/tournaments/${tournament._id}/rounds/${round._id}/overall`;
+        const res = await fetch(url, { credentials: 'include' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data: OverallData = await res.json();
         setOverallData(data);
         setError(null);
       } catch (err) {
@@ -91,7 +71,7 @@ const Champions: React.FC<ChampionsProps> = ({ tournament, round }) => {
     if (tournament._id && round?._id) fetchOverall();
   }, [tournament._id, round?._id]);
 
-  const champion = useMemo(() => {
+  const third = useMemo<((Team & { total: number; totalKills: number }) | null)>(() => {
     if (!overallData) return null;
 
     const enriched = overallData.teams.map(team => {
@@ -102,13 +82,7 @@ const Champions: React.FC<ChampionsProps> = ({ tournament, round }) => {
 
     enriched.sort((a, b) => b.total - a.total);
 
-    if (enriched.length === 0) return null;
-
-    const first = enriched[0];
-    const second = enriched[1];
-    const leadOverNext = second ? first.total - (second.total as number) : first.total;
-
-    return { ...first, leadOverNext } as (Team & { total: number; totalKills: number; leadOverNext: number });
+    return (enriched[2] as (Team & { total: number; totalKills: number })) || null;
   }, [overallData]);
 
   if (loading) {
@@ -119,10 +93,10 @@ const Champions: React.FC<ChampionsProps> = ({ tournament, round }) => {
     );
   }
 
-  if (error || !overallData || !champion) {
+  if (error || !overallData || !third) {
     return (
       <div className="w-[1920px] h-[1080px] flex items-center justify-center">
-        <div className="text-white text-2xl font-[Righteous]">{error || 'No overall data available'}</div>
+        <div className="text-white text-2xl font-[Righteous]">{error || 'Not enough data'}</div>
       </div>
     );
   }
@@ -139,7 +113,7 @@ const Champions: React.FC<ChampionsProps> = ({ tournament, round }) => {
             clipPath: "polygon(30px 0%, 100% 0%, 100% 100%, 30px 100%, 0% 50%)",
           }}
         className="text-[2rem] font-[Righteous] pl-[40px] flex items-center h-[70px] mt-[10px] ml-[50px]">
-        <span className='text-yellow-300 pr-[10px]'> CHAMPIONS</span> OF {tournament.tournamentName} -  {round?.roundName}
+        <span className='text-yellow-300 pr-[10px]'> 2ND RUNNER-UP</span> OF {tournament.tournamentName} -  {round?.roundName}
         </div>
       </div>
 
@@ -160,14 +134,14 @@ className='bg-white w-[700px] h-[120px] skew-x-[20deg]'>
 </div>
 <div className='font-bebas font-[300] text-[3rem] absolute top-[-10px] left-[640px]' >
     
-    <img src={champion.teamLogo} alt="" className='w-[20%]'/>
+    <img src={third.teamLogo} alt="" className='w-[20%]'/>
     
     </div>
 <div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[840px] text-white ' > 
-   {champion.teamName}
+   {third.teamName}
     </div>
 </div>
- {/* Players Grid */}
+ {/* Players Grid and Stats */}
  <div className="">
           
  <div 
@@ -191,7 +165,7 @@ background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tou
 <div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[200px] text-black ' > 
     <div className='flex items-center'>
     
-    <img src="/chicken.png" alt="" className='w-[70px] h-[70px] mr-[10px] mb-[10px]'/> x {champion.wwcd || 0}</div>
+    <img src="/chicken.png" alt="" className='w-[70px] h-[70px] mr-[10px] mb-[10px]'/> x {third.wwcd || 0}</div>
     </div>
 </div>
 <div className='absolute top-[30px] left-[530px]'>
@@ -201,7 +175,7 @@ background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tou
 
 </div>
 <div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[20px]' >PLACE</div>
-<div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[200px] text-black ' >{champion.placePoints || 0} PTS </div>
+<div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[200px] text-black ' >{third.placePoints || 0} PTS </div>
 </div>
 <div className='absolute top-[30px] left-[1000px]'>
 <div className='bg-white w-[400px] h-[100px] skew-x-[20deg]'>
@@ -213,7 +187,7 @@ background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tou
 
 
 <div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[30px]' >KILLS</div>
-<div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[200px] text-black ' >{champion.totalKills || 0} PTS </div>
+<div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[200px] text-black ' >{third.totalKills || 0} PTS </div>
 </div>
 <div className='absolute top-[30px] left-[1450px]  '>
 <div className='bg-white w-[400px] h-[100px] skew-x-[20deg] '>
@@ -222,12 +196,12 @@ background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tou
 
 </div>
 <div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[30px]' >TOTAL</div>
-<div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[200px] text-black ' >{champion.total || 0} PTS </div>
+<div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[200px] text-black ' >{third.total || 0} PTS </div>
 
 </div>
 </div>
-  {champion.players.map((p) => (
-    <div key={p._id} className="flex flex-col items-center m-[-150px] relative top-[420px]">
+  {third.players.map((p) => (
+    <div key={p._id} className="flex flex-col items-center m-[-200px] relative top-[400px]">
     <div 
   
     className='w-full absolute h-full top-[0px] '></div>
@@ -249,4 +223,4 @@ background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tou
   );
 };
 
-export default Champions;
+export default SecondRunnerUp;

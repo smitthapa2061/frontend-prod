@@ -559,46 +559,7 @@ const totalPlayers = useMemo(() => (
  
   }}
 >
-  {/* Extra links */}
-<a
-  href="https://scoresync-v1.vercel.app/teams"
-  target="_blank"
-  rel="noopener noreferrer"
-  style={{
-    background: '#ffcc00',
-    color: '#000',
-    fontWeight: 'bold',
-    border: '2px solid #000',
-    borderRadius: '6px',
-    padding: '0.5rem 1rem',
-    textDecoration: 'none',
-    cursor: 'pointer',
-    boxShadow: '0 0 15px transparent',
-    transition: 'box-shadow 0.2s ease',
-  }}
->
-  ADD PLAYERS
-</a>
-
-<a
-  href="https://scoresync-v1.vercel.app/displayhud"
-  target="_blank"
-  rel="noopener noreferrer"
-  style={{
-    background: '#ffcc00',
-    color: '#000',
-    fontWeight: 'bold',
-    border: '2px solid #000',
-    borderRadius: '6px',
-    padding: '0.5rem 1rem',
-    textDecoration: 'none',
-    cursor: 'pointer',
-    boxShadow: '0 0 15px transparent',
-    transition: 'box-shadow 0.2s ease',
-  }}
->
-  DISPLAY HUD
-</a>
+ 
 
       {/* Sticky header + navigation in one box */}
 <div

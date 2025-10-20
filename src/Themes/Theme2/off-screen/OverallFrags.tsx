@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import api from '../../../login/api.tsx';
 
 interface Tournament {
   _id: string;
@@ -84,35 +83,23 @@ const OverallFrags: React.FC<OverallFragsProps> = ({ tournament, round }) => {
       try {
         setLoading(true);
 
-        // Initialize empty overall data structure
-        const data: OverallData = {
-          tournamentId: tournament._id,
-          roundId: round._id,
-          userId: '',
-          teams: [],
-          createdAt: new Date().toISOString()
-        };
+        const overallUrl = `https://backend-prod-530t.onrender.com/api/public/tournaments/${tournament._id}/rounds/${round._id}/overall`;
+        const overallResponse = await fetch(overallUrl, { credentials: 'include' });
+        if (!overallResponse.ok) throw new Error(`HTTP ${overallResponse.status}`);
+        const data: OverallData = await overallResponse.json();
 
-        const matchesUrl = `/public/rounds/${round._id}/matches`;
-        const matchesResponse = await api.get(matchesUrl);
-        const matchesList: Match[] = matchesResponse.data;
+        const matchesUrl = `https://backend-prod-530t.onrender.com/api/public/rounds/${round._id}/matches`;
+        const matchesResponse = await fetch(matchesUrl, { credentials: 'include' });
+        if (!matchesResponse.ok) throw new Error(`HTTP ${matchesResponse.status}`);
+        const matchesList: Match[] = await matchesResponse.json();
         setMatches(matchesList);
 
         const matchDataPromises = matchesList.map(match => {
-          const url = `/public/matches/${match._id}/matchdata`;
-          return api.get(url)
-            .then(res => res.data)
+          const url = `https://backend-prod-530t.onrender.com/api/public/matches/${match._id}/matchdata`;
+          return fetch(url, { credentials: 'include' })
+            .then(res => res.ok ? res.json() : null)
             .catch(() => null);
         });
-
-        // Try to get overall data, but don't fail if it doesn't exist
-        try {
-          const overallUrl = `/public/tournaments/${tournament._id}/rounds/${round._id}/overall`;
-          const overallResponse = await api.get(overallUrl);
-          Object.assign(data, overallResponse.data);
-        } catch (overallError) {
-          console.log('Overall data not available, using calculated data from matches');
-        }
         const matchDatas: (MatchData | null)[] = await Promise.all(matchDataPromises);
 
         const teamMatchesCount = new Map<string, number>();

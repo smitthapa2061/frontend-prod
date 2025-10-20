@@ -27,34 +27,39 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-20 p-6 border rounded">
-      <h2 className="text-xl font-bold mb-4">Login</h2>
-      <form onSubmit={handleLogin} className="flex flex-col gap-3">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-          className="p-2 border rounded"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-          className="p-2 border rounded"
-        />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white p-2 rounded"
-          disabled={loading}
-        >
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
-      {error && <p className="text-red-600 mt-2">{error}</p>}
+    <div>
+
+
+
+      <div className="max-w-md mx-auto mt-20 p-6 border rounded">
+        <h2 className="text-xl font-bold mb-4">Login</h2>
+        <form onSubmit={handleLogin} className="flex flex-col gap-3">
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+            className="p-2 border rounded"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+            className="p-2 border rounded"
+          />
+          <button
+            type="submit"
+            className="bg-blue-600 text-white p-2 rounded"
+            disabled={loading}
+          >
+            {loading ? "Logging in..." : "Login"}
+          </button>
+        </form>
+        {error && <p className="text-red-600 mt-2">{error}</p>}
+      </div>
     </div>
   );
 };

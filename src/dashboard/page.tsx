@@ -1,6 +1,6 @@
 import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaDiscord, FaWhatsapp } from "react-icons/fa";
 import api from "../login/api.tsx"; // Axios instance with withCredentials
 import { socket } from "./socket.tsx"; // socket instance
 import { setCache, getCache } from "./cache.tsx"; // ✅ caching utils
@@ -41,6 +41,7 @@ const Dashboard: React.FC = () => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [editingTournament, setEditingTournament] = useState<Tournament | null>(null);
   const [editForm, setEditForm] = useState<Partial<Tournament>>({});
+  const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
 
   // --- Auth check (cached) ---
@@ -59,13 +60,14 @@ const Dashboard: React.FC = () => {
 
   // --- Fetch tournaments with caching (per user) ---
   const fetchTournaments = async () => {
-    const user = await checkAuth();
-    if (!user) {
+    const userData = await checkAuth();
+    if (!userData) {
       navigate("/");
       return;
     }
+    setUser(userData);
 
-    const key = `${CACHE_KEY_BASE}_${user._id}`;
+    const key = `${CACHE_KEY_BASE}_${userData._id}`;
 
     // Try cache first (10 minutes TTL)
     const cached = getCache(key, 1000 * 60 * 10);
@@ -195,27 +197,42 @@ const Dashboard: React.FC = () => {
 
   return (
     <div>
-      {/* Nav */}
-      <div className="bg-gray-800 text-white p-4 flex justify-center space-x-5">
-        <button className="bg-white text-black px-6 py-2 rounded-xl">TOURNAMENTS</button>
-        <button
-          onClick={() => window.open("/teams", "_blank")}
-          className="bg-white text-black px-6 py-2 rounded-xl hover:bg-gray-200"
-        >
-          ADD TEAMS
-        </button>
-        <button
-          onClick={() => window.open("/displayhud", "_blank")}
-          className="bg-white text-black px-6 py-2 rounded-xl hover:bg-gray-200"
-        >
-          DISPLAY HUD
-        </button>
+      <div className="bg-gray-800 text-white p-4 w-full h-[100px] flex flex-col items-center">
+        <div className="flex justify-between items-center space-x-5 mb-4 relative top-[10px] w-full">
+          <div className="absolute w-[60px] ml-[10px] mt-[5px]"><img src="https://res.cloudinary.com/dqckienxj/image/upload/v1760081339/scoresync_logo.jpg_hsz7qz.png" alt="logo" className="w-full h-full "/></div>
+          <div></div>
+          <div className="flex space-x-5 justify-center">
+            <button
+              onClick={() => (window.location.href = '/dashboard')}
+              className="bg-white text-black font-medium text-[1rem] rounded-xl px-6 py-2 border-2 border-transparent"
+            >
+              TOURNAMENTS
+            </button>
+            <button
+              onClick={() => window.open('/teams', '_blank', 'noopener,noreferrer')}
+              className="bg-white text-black font-medium text-[1rem] rounded-xl px-6 py-2 border-2 border-transparent cursor-pointer hover:bg-gray-200 transition"
+            >
+              ADD TEAMS
+            </button>
+            <button
+              onClick={() => window.open('/displayhud', '_blank', 'noopener,noreferrer')}
+              className="bg-white text-black font-medium text-[1rem] rounded-xl px-6 py-2 border-2 border-transparent cursor-pointer hover:bg-gray-200 transition"
+            >
+              DISPLAY HUD
+            </button>
+          </div>
+           <div className="text-right">
+                     {user && <span className="font-bold font-mono font-300 text-[1rem] text-right">ADMIN:{user.username}</span>}
+                     <div className="font-mono flex items-center ">HelpDesk <FaDiscord className="cursor-pointer  hover:text-red-700 text-[2rem] text-white" onClick={() => window.open('https://discord.com/channels/623776491682922526/1426117227257663558', '_blank')} /></div>
+                    
+                   </div>
+        </div>
       </div>
 
       {/* Tournament Manager */}
       <div className="w-full h-full">
         <button
-          className="bg-[#232323] text-white px-6 py-2 rounded-xl mt-4 ml-4"
+          className="bg-[#232323] text-white px-6 py-2 rounded-xl mt-4 ml-4 "
           onClick={() => setShowForm(!showForm)}
         >
           ADD TOURNAMENT

@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import api from '../../../login/api.tsx';
 
 interface Tournament {
   _id: string;
@@ -83,35 +82,23 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round })
       try {
         setLoading(true);
 
-        // Initialize empty overall data structure
-        const data: OverallData = {
-          tournamentId: tournament._id,
-          roundId: round._id,
-          userId: '',
-          teams: [],
-          createdAt: new Date().toISOString()
-        };
+        const overallUrl = `https://backend-prod-530t.onrender.com/api/public/tournaments/${tournament._id}/rounds/${round._id}/overall`;
+        const overallResponse = await fetch(overallUrl, { credentials: 'include' });
+        if (!overallResponse.ok) throw new Error(`HTTP ${overallResponse.status}`);
+        const data: OverallData = await overallResponse.json();
 
-        const matchesUrl = `/public/rounds/${round._id}/matches`;
-        const matchesResponse = await api.get(matchesUrl);
-        const matchesList: Match[] = matchesResponse.data;
+        const matchesUrl = `https://backend-prod-530t.onrender.com/api/public/rounds/${round._id}/matches`;
+        const matchesResponse = await fetch(matchesUrl, { credentials: 'include' });
+        if (!matchesResponse.ok) throw new Error(`HTTP ${matchesResponse.status}`);
+        const matchesList: Match[] = await matchesResponse.json();
 
         const matchDataPromises = matchesList.map(match => {
-          const url = `/public/matches/${match._id}/matchdata`;
-          return api.get(url)
-            .then(res => res.data)
+          const url = `https://backend-prod-530t.onrender.com/api/public/matches/${match._id}/matchdata`;
+          return fetch(url, { credentials: 'include' })
+            .then(res => res.ok ? res.json() : null)
             .catch(() => null);
         });
         const matchDatas: (MatchData | null)[] = await Promise.all(matchDataPromises);
-
-        // Try to get overall data, but don't fail if it doesn't exist
-        try {
-          const overallUrl = `/public/tournaments/${tournament._id}/rounds/${round._id}/overall`;
-          const overallResponse = await api.get(overallUrl);
-          Object.assign(data, overallResponse.data);
-        } catch (overallError) {
-          console.log('Overall data not available, using calculated data from matches');
-        }
 
         const teamMatchesCount = new Map<string, number>();
         matchDatas.forEach(matchData => {
@@ -138,24 +125,20 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round })
         updatedTeams.sort((a, b) => b.total! - a.total!);
 
         // Calculate pointsChange and leadOverNext
-const newTotals = new Map<string, number>();
+        const newTotals = new Map<string, number>();
+        updatedTeams.forEach((team, index) => {
+          team.rank = index + 1;
+          const prevTotal = previousTotals.get(team.teamId) || 0;
+          team.pointsChange = team.total! - prevTotal;
 
-updatedTeams.forEach((team, index) => {
-  team.rank = index + 1;
+          // leadOverNext only for rank 1
+          if (team.rank === 1 && updatedTeams.length > 1) {
+            const secondTeam = updatedTeams[1];
+            team.leadOverNext = team.total! - secondTeam.total!;
+          }
 
-  const prevTotal = previousTotals.get(team.teamId) || 0;
-  team.pointsChange = team.total! - prevTotal;
-
-  // Calculate leadOverNext for every team except the last one
-  if (index < updatedTeams.length - 1) {
-    const nextTeam = updatedTeams[index + 1];
-    team.leadOverNext = team.total! - nextTeam.total!;
-  } else {
-    team.leadOverNext = 0; // no next team
-  }
-
-  newTotals.set(team.teamId, team.total!);
-});
+          newTotals.set(team.teamId, team.total!);
+        });
 
         setPreviousTotals(newTotals);
         setOverallData({ ...data, teams: updatedTeams });
@@ -170,7 +153,7 @@ updatedTeams.forEach((team, index) => {
     if (tournament._id && round?._id) fetchData();
   }, [tournament._id, round?._id]);
 
-  // Pagination - Show 2, 3, 4, etc. teams per page
+  // Pagination
   const [currentPage, setCurrentPage] = useState(0);
   const teamsPerPage = 8;
   const totalPages = overallData ? Math.ceil(overallData.teams.length / teamsPerPage) : 0;
@@ -270,16 +253,17 @@ updatedTeams.forEach((team, index) => {
               <span>{team.placePoints}</span>
               <span>{team.total}</span>
               <span>{team.wwcd || 0}</span>
-      <span
-  style={{
+              <span  style={{
     background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`,
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-  }}
->
-  {team.leadOverNext ?? 0}
-</span>
+    backgroundClip: 'text', // for some browsers
+
+  }}>
+                {team.rank === 1
+                  ? `${team.leadOverNext || 0}`
+                  : team.pointsChange! > 0 ? `${team.pointsChange}` : team.pointsChange! < 0 ? team.pointsChange : '0'}
+              </span>
             </div>
           </motion.div>
         ))}

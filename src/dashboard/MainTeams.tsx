@@ -1,6 +1,7 @@
 import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import axios from 'axios';
-import { FaTrash, FaEdit } from 'react-icons/fa';
+import { FaTrash, FaEdit, FaDiscord, FaWhatsapp } from 'react-icons/fa';
+import api from '../login/api.tsx';
 
 interface Player {
   _id?: string;
@@ -23,7 +24,8 @@ const Teams: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
-const [selectedPlayersPerTeam, setSelectedPlayersPerTeam] = useState<Record<string, Set<string>>>({});
+  const [selectedPlayersPerTeam, setSelectedPlayersPerTeam] = useState<Record<string, Set<string>>>({});
+  const [user, setUser] = useState<any>(null);
 
 
   const [form, setForm] = useState({ teamFullName: '', teamTag: '', logo: '' });
@@ -35,7 +37,19 @@ const [selectedPlayersPerTeam, setSelectedPlayersPerTeam] = useState<Record<stri
   const [deletingPlayerIds, setDeletingPlayerIds] = useState<Set<string>>(new Set());
   const [deletingTeamIds, setDeletingTeamIds] = useState<Set<string>>(new Set());
 
+  // --- Auth check ---
+  const checkAuth = async () => {
+    try {
+      const { data } = await api.get("/users/me");
+      setUser(data);
+      return data;
+    } catch {
+      return null;
+    }
+  };
+
   useEffect(() => {
+    checkAuth();
     fetchTeams();
   }, []);
 
@@ -216,27 +230,36 @@ const deleteSelectedPlayers = async (teamId: string) => {
     <>
       {/* Fixed Navigation Bar */}
       <nav
-        className="fixed top-0 left-0 right-0 bg-gray-800 text-white p-4 flex justify-center space-x-6 z-50"
+        className="fixed top-0 left-0 right-0 bg-gray-800 text-white p-4 flex justify-between items-center z-50"
         style={{ margin: 0 }}
       >
-        <button
-          onClick={goToTournaments}
-          className="bg-white text-black font-medium rounded-xl px-6 py-2 hover:bg-gray-200 transition"
-        >
-          TOURNAMENT
-        </button>
-        <button
-          onClick={goToAddTeams}
-          className="bg-white text-black font-medium rounded-xl px-6 py-2 hover:bg-gray-200 transition"
-        >
-          ADD TEAMS
-        </button>
-        <button
-          onClick={goToDisplayHUD}
-          className="bg-white text-black font-medium rounded-xl px-6 py-2 hover:bg-gray-200 transition"
-        >
-          DISPLAY HUD
-        </button>
+        <div className="absolute w-[60px] ml-[10px] mt-[5px]"><img src="https://res.cloudinary.com/dqckienxj/image/upload/v1760081339/scoresync_logo.jpg_hsz7qz.png" alt="logo" className="w-full h-full "/></div> 
+        <div></div>
+        <div className="flex space-x-6 justify-center">
+          <button
+            onClick={goToTournaments}
+            className="bg-white text-black font-medium rounded-xl px-6 py-2 hover:bg-gray-200 transition"
+          >
+            TOURNAMENT
+          </button>
+          <button
+            onClick={goToAddTeams}
+            className="bg-white text-black font-medium rounded-xl px-6 py-2 hover:bg-gray-200 transition"
+          >
+            ADD TEAMS
+          </button>
+          <button
+            onClick={goToDisplayHUD}
+            className="bg-white text-black font-medium rounded-xl px-6 py-2 hover:bg-gray-200 transition"
+          >
+            DISPLAY HUD
+          </button>
+        </div>
+         <div className="text-right">
+                   {user && <span className="font-bold font-mono font-300 text-[1rem] text-right">ADMIN:{user.username}</span>}
+                   <div className="font-mono flex items-center ">Join Discord <FaDiscord className="cursor-pointer  hover:text-red-700 text-[2rem] text-white" onClick={() => window.open('https://discord.com/channels/623776491682922526/1426117227257663558', '_blank')} /></div>
+                  
+                 </div>
       </nav>
 
       {/* Padding below fixed nav to prevent overlap */}

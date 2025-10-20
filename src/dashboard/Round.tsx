@@ -40,29 +40,26 @@ const Round: React.FC = () => {
     fetchRounds();
 
     // Listen for real-time round updates
-    socket.on('roundUpdated', fetchRounds);
+    socket.on('roundUpdated', () => {
+      // Clear cache and refetch
+      sessionStorage.removeItem(cacheKey);
+      fetchRounds();
+    });
     return () => {
       socket.off('roundUpdated', fetchRounds);
     };
-  }, [tournamentId]);
+  }, [tournamentId, cacheKey]);
 
   const fetchRounds = async () => {
     setLoading(true);
     try {
-      // Check cache first
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        setRounds(JSON.parse(cached));
-        setError(null);
-        setLoading(false);
-        return;
-      }
-
+      // Always fetch fresh data, don't use cache for now to ensure apiEnable updates are visible
       let url = tournamentId
         ? `/tournaments/${tournamentId}/rounds`
         : '/user/rounds';
 
       const { data } = await api.get(url);
+      console.log('Fetched rounds:', data); // Debug log
       setRounds(data);
       sessionStorage.setItem(cacheKey, JSON.stringify(data));
       setError(null);
@@ -98,12 +95,9 @@ const Round: React.FC = () => {
         apiEnable,
       });
 
-      const updatedRounds = newRound.apiEnable
-        ? rounds.map(r => ({ ...r, apiEnable: false })).concat(newRound)
-        : [...rounds, newRound];
-
-      setRounds(updatedRounds);
-      sessionStorage.setItem(cacheKey, JSON.stringify(updatedRounds));
+      // Clear cache and refetch to get updated apiEnable states
+      sessionStorage.removeItem(cacheKey);
+      await fetchRounds();
 
       closeAddModal();
     } catch (err: any) {
@@ -147,12 +141,9 @@ const Round: React.FC = () => {
         apiEnable: editApiEnable,
       });
 
-      const updatedRounds = updatedRound.apiEnable
-        ? rounds.map(r => (r._id === updatedRound._id ? updatedRound : { ...r, apiEnable: false }))
-        : rounds.map(r => (r._id === updatedRound._id ? updatedRound : r));
-
-      setRounds(updatedRounds);
-      sessionStorage.setItem(cacheKey, JSON.stringify(updatedRounds));
+      // Clear cache and refetch to get updated apiEnable states
+      sessionStorage.removeItem(cacheKey);
+      await fetchRounds();
 
       setEditRoundId(null);
     } catch (err: any) {

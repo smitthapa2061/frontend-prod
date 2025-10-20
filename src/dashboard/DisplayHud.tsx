@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import api from '../login/api.tsx';
 import Polling from "./isPolling.tsx"
+import { FaDiscord, FaWhatsapp } from 'react-icons/fa';
 
 interface Tournament {
   _id: string;
@@ -26,6 +27,8 @@ const DisplayHud: React.FC = () => {
   const [matchesMap, setMatchesMap] = useState<Record<string, Match[]>>({});
   const [expandedRounds, setExpandedRounds] = useState<Record<string, string | null>>({});
   const [selectedMatches, setSelectedMatches] = useState<Record<string, string | null>>({});
+  const [user, setUser] = useState<any>(null);
+  const [pollingKey, setPollingKey] = useState(0); // Force re-render polling component
   // Theme selection per tournament
   const availableThemes = ['Theme1', 'Theme2'];
   const [selectedThemeMap, setSelectedThemeMap] = useState<Record<string, string>>(() => {
@@ -38,8 +41,20 @@ const DisplayHud: React.FC = () => {
   });
   const getSelectedTheme = (tournamentId: string) => selectedThemeMap[tournamentId] || 'Theme1';
 
+  // --- Auth check ---
+  const checkAuth = async () => {
+    try {
+      const { data } = await api.get("/users/me");
+      setUser(data);
+      return data;
+    } catch {
+      return null;
+    }
+  };
+
   // Fetch tournaments (user-specific)
   useEffect(() => {
+    checkAuth();
     api.get('/tournaments')
       .then(res => setTournaments(res.data))
       .catch(() => setTournaments([]));
@@ -50,12 +65,16 @@ const DisplayHud: React.FC = () => {
     const fetchSelectedMatches = async () => {
       try {
         const res = await api.get('/matchSelection/selected');
+        console.log('DisplayHud: Fetched selected matches:', res.data);
         const selectedMap: Record<string, string> = {};
         res.data.forEach((sel: any) => {
-          const key = `${sel.tournamentId}_${sel.roundId}`;
+          const roundId = typeof sel.roundId === 'object' ? sel.roundId._id : sel.roundId;
+          const key = `${sel.tournamentId}_${roundId}`;
           selectedMap[key] = sel.matchId;
+          console.log(`DisplayHud: Setting selected match for ${key}: ${sel.matchId} (roundId: ${roundId})`);
         });
         setSelectedMatches(selectedMap);
+        console.log('DisplayHud: Final selected matches map:', selectedMap);
       } catch (err) {
         console.error('Error fetching selected matches:', err);
       }
@@ -135,6 +154,9 @@ const DisplayHud: React.FC = () => {
       } else {
         setSelectedMatches(prev => ({ ...prev, [key]: matchId }));
       }
+
+      // Force refresh the polling component when match changes
+      setPollingKey(prev => prev + 1);
     } catch (err) {
       console.error('Error selecting/deselecting match:', err);
     }
@@ -143,29 +165,38 @@ const DisplayHud: React.FC = () => {
   return (
     <div style={{ background: '#f9f9f9', color: '#333', minHeight: '100vh' }}>
       <div className="bg-gray-800 text-white p-4 w-full h-[100px] flex flex-col items-center">
-        <div className="flex justify-center items-center space-x-5 mb-4 relative top-[10px]">
-          <button
-            onClick={() => (window.location.href = '/dashboard')}
-            className="bg-white text-black font-medium text-[1rem] rounded-xl px-6 py-2 border-2 border-transparent"
-          >
-            TOURNAMENTS
-          </button>
-          <button
-            onClick={() => window.open('/teams', '_blank', 'noopener,noreferrer')}
-            className="bg-white text-black font-medium text-[1rem] rounded-xl px-6 py-2 border-2 border-transparent cursor-pointer hover:bg-gray-200 transition"
-          >
-            ADD TEAMS
-          </button>
-          <button
-            onClick={() => window.open('/displayhud', '_blank', 'noopener,noreferrer')}
-            className="bg-white text-black font-medium text-[1rem] rounded-xl px-6 py-2 border-2 border-transparent cursor-pointer hover:bg-gray-200 transition"
-          >
-            DISPLAY HUD
-          </button>
+        <div className="flex justify-between items-center space-x-5 mb-4 relative top-[10px] w-full">
+              <div className="absolute w-[60px] ml-[10px] mt-[5px]"><img src="https://res.cloudinary.com/dqckienxj/image/upload/v1760081339/scoresync_logo.jpg_hsz7qz.png" alt="logo" className="w-full h-full "/></div>
+          <div></div>
+          <div className="flex space-x-5 justify-center">
+            <button
+              onClick={() => (window.location.href = '/dashboard')}
+              className="bg-white text-black font-medium text-[1rem] rounded-xl px-6 py-2 border-2 border-transparent"
+            >
+              TOURNAMENTS
+            </button>
+            <button
+              onClick={() => window.open('/teams', '_blank', 'noopener,noreferrer')}
+              className="bg-white text-black font-medium text-[1rem] rounded-xl px-6 py-2 border-2 border-transparent cursor-pointer hover:bg-gray-200 transition"
+            >
+              ADD TEAMS
+            </button>
+            <button
+              onClick={() => window.open('/displayhud', '_blank', 'noopener,noreferrer')}
+              className="bg-white text-black font-medium text-[1rem] rounded-xl px-6 py-2 border-2 border-transparent cursor-pointer hover:bg-gray-200 transition"
+            >
+              DISPLAY HUD
+            </button>
+          </div>
+          <div className="text-right">
+            {user && <span className="font-bold font-mono font-300 text-[1rem] text-right">ADMIN:{user.username}</span>}
+            <div className="font-mono flex items-center ">HelpDesk<FaDiscord className="cursor-pointer  hover:text-red-700 text-[2rem] text-white" onClick={() => window.open('https://discord.com/channels/623776491682922526/1426117227257663558', '_blank')} /></div>
+           
+          </div>
         </div>
       </div>
 
-      <Polling />
+      <Polling key={pollingKey} />
 
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
         {tournaments.map(t => (

@@ -305,10 +305,10 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
     }
   }, [matchData, matchDataId]);
 
-  // Fetch overall aggregated data for tournament/round up to current match
+  // Fetch overall aggregated data for tournament/round
   useEffect(() => {
-    if (!tournament?._id || !round?._id || !match?._id) return;
-    const url = `http://localhost:3000/api/public/tournament/${tournament._id}/round/${round._id}/match/${match._id}/overall`;
+    if (!tournament?._id || !round?._id) return;
+    const url = `https://backend-prod-530t.onrender.com/api/public/tournaments/${tournament._id}/rounds/${round._id}/overall`;
     fetch(url, { credentials: 'include' })
       .then(res => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then(data => {
@@ -329,7 +329,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
         console.error('Failed to fetch overall data:', err);
         setOverallMap(new Map());
       });
-  }, [tournament?._id, round?._id, match?._id]);
+  }, [tournament?._id, round?._id]);
 
   // Sort teams by points first, then by kills - recalculated on every localMatchData change
   const sortedTeams = useMemo(() => {
@@ -345,7 +345,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
         const overallKills = overall && Array.isArray(overall.players)
           ? overall.players.reduce((s: number, p: any) => s + (p.killNum || 0), 0)
           : 0;
-        const totalPoints = (overall?.placePoints || 0) + (team.placePoints || 0) + liveKills + overallKills;
+        const totalPoints = (overall?.placePoints || 0) + liveKills + overallKills;
         const isAllDead = team.players.every(player => player.liveState === 5 || player.bHasDied);
 
         return {
@@ -419,10 +419,6 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
         }
         alt={player.playerName}
         className="w-full h-full"
-        onError={(e) => {
-          const target = e.target as HTMLImageElement;
-          target.src = 'https://res.cloudinary.com/dqckienxj/image/upload/v1735718663/defult_chach_apsjhc_jydubc.png';
-        }}
       />
     </div>
   ))}
@@ -438,7 +434,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
       
       {/* Team Logo */}
       <div className='w-[40px]  relative left-[20px]'>
-        <img src={topTeam.teamLogo || 'https://res.cloudinary.com/dqckienxj/image/upload/v1759393783/default1_ypnvsb.png'} alt={topTeam.teamTag} className="w-full h-full " />
+        <img src={topTeam.teamLogo} alt={topTeam.teamTag} className="w-full h-full " />
       </div>
       <div className='w-[1px] h-[90%] bg-white relative left-[22px]'></div>
       {/* Team Tag */}
@@ -533,7 +529,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
 
 <div className='w-[80px] relative left-[4px] h-[100%] ml-[40px]  bg-white '>
 
-  <img src={team.teamLogo || 'https://res.cloudinary.com/dqckienxj/image/upload/v1759393783/default1_ypnvsb.png'} alt="" />
+  <img src={team.teamLogo} alt="" />
 </div>
 
 

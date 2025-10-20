@@ -24,6 +24,29 @@ import MatchSummary from '../Themes/Theme1/off-screen/MatchSummary.tsx'
 import PlayerH2H from '../Themes/Theme1/off-screen/playerh2h.tsx'
 import TeamH2H from '../Themes/Theme1/off-screen/teamh2h.tsx'
 
+// Theme2 imports
+import Lower2 from '../Themes/Theme2/on-screen/Lower.tsx';
+import Upper2 from '../Themes/Theme2/on-screen/Upper.tsx';
+import Dom2 from '../Themes/Theme2/on-screen/Dom.tsx';
+import Alerts2 from '../Themes/Theme2/on-screen/Alerts.tsx';
+import LiveStats2 from '../Themes/Theme2/on-screen/LiveStats.tsx';
+import LiveFrags2 from '../Themes/Theme2/on-screen/LiveFrags.tsx';
+import MatchData2 from '../Themes/Theme2/off-screen/MatchData.tsx';
+import MatchFragrs2 from '../Themes/Theme2/off-screen/MatchFragrs.tsx';
+import WwcdSummary2 from '../Themes/Theme2/off-screen/WwcdSummary.tsx';
+import WwcdStats2 from '../Themes/Theme2/off-screen/WwcdStats.tsx'
+import OverallData2 from   '../Themes/Theme2/off-screen/OverAllData.tsx'
+import OverallFrags2 from '../Themes/Theme2/off-screen/OverallFrags.tsx'
+import Schedule2 from '../Themes/Theme2/off-screen/Schedule.tsx'
+import CommingUpNext2 from '../Themes/Theme2/off-screen/CommingUpNext.tsx'
+import Champions2 from '../Themes/Theme2/off-screen/Champions.tsx'
+import FirstRunnerUp2 from '../Themes/Theme2/off-screen/1stRunnerUp.tsx'
+import SecondRunnerUp2 from '../Themes/Theme2/off-screen/2ndRunnerUp.tsx'
+import EventMvp2 from '../Themes/Theme2/off-screen/EventMvp.tsx'
+import MatchSummary2 from '../Themes/Theme2/off-screen/MatchSummary.tsx'
+import PlayerH2H2 from '../Themes/Theme2/off-screen/playerh2h.tsx'
+import TeamH2H2 from '../Themes/Theme2/off-screen/teamh2h.tsx'
+
 
 interface Tournament {
   _id: string;
@@ -65,6 +88,29 @@ const PublicThemeRenderer: React.FC = () => {
   const view = searchParams.get('view') || 'Lower';
   const followSelected = (searchParams.get('followSelected') || 'false').toLowerCase() === 'true';
 
+  const isTheme1 = theme === 'Theme1';
+  const LowerComp = isTheme1 ? Lower : Lower2;
+  const UpperComp = isTheme1 ? Upper : Upper2;
+  const DomComp = isTheme1 ? Dom : Dom2;
+  const AlertsComp = isTheme1 ? Alerts : Alerts2;
+  const LiveStatsComp = isTheme1 ? LiveStats : LiveStats2;
+  const LiveFragsComp = isTheme1 ? LiveFrags : LiveFrags2;
+  const MatchDataComp = isTheme1 ? MatchData : MatchData2;
+  const MatchFragrsComp = isTheme1 ? MatchFragrs : MatchFragrs2;
+  const WwcdSummaryComp = isTheme1 ? WwcdSummary : WwcdSummary2;
+  const WwcdStatsComp = isTheme1 ? WwcdStats : WwcdStats2;
+  const OverallDataComp = isTheme1 ? OverallData : OverallData2;
+  const OverallFragsComp = isTheme1 ? OverallFrags : OverallFrags2;
+  const ScheduleComp = isTheme1 ? Schedule : Schedule2;
+  const CommingUpNextComp = isTheme1 ? CommingUpNext : CommingUpNext2;
+  const ChampionsComp = isTheme1 ? Champions : Champions2;
+  const FirstRunnerUpComp = isTheme1 ? FirstRunnerUp : FirstRunnerUp2;
+  const SecondRunnerUpComp = isTheme1 ? SecondRunnerUp : SecondRunnerUp2;
+  const EventMvpComp = isTheme1 ? EventMvp : EventMvp2;
+  const MatchSummaryComp = isTheme1 ? MatchSummary : MatchSummary2;
+  const PlayerH2HComp = isTheme1 ? PlayerH2H : PlayerH2H2;
+  const TeamH2HComp = isTheme1 ? TeamH2H : TeamH2H2;
+
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [round, setRound] = useState<Round | null>(null);
   const [match, setMatch] = useState<Match | null>(null);
@@ -80,7 +126,7 @@ const PublicThemeRenderer: React.FC = () => {
         setLoading(true);
 
         // Use direct fetch to bypass authentication for public access
-        const tournamentResponse = await fetch(`https://backend-prod-530t.onrender.com/api/public/tournaments/${tournamentId}`);
+        const tournamentResponse = await fetch(`http://localhost:3000/api/public/tournaments/${tournamentId}`);
         if (!tournamentResponse.ok) {
           throw new Error('Failed to fetch tournament data');
         }
@@ -88,7 +134,7 @@ const PublicThemeRenderer: React.FC = () => {
         setTournament(tournamentData);
 
         // Fetch round data
-        const roundResponse = await fetch(`https://backend-prod-530t.onrender.com/api/public/tournaments/${tournamentId}/rounds/${roundId}`);
+        const roundResponse = await fetch(`http://localhost:3000/api/public/tournaments/${tournamentId}/rounds/${roundId}`);
         if (!roundResponse.ok) {
           throw new Error('Failed to fetch round data');
         }
@@ -99,7 +145,7 @@ const PublicThemeRenderer: React.FC = () => {
         let effectiveMatchId = matchId;
         if (followSelected) {
           try {
-            const selRes = await fetch(`https://backend-prod-530t.onrender.com/api/public/tournaments/${tournamentId}/rounds/${roundId}/selected-match`);
+            const selRes = await fetch(`http://localhost:3000/api/public/tournaments/${tournamentId}/rounds/${roundId}/selected-match`);
             if (selRes.ok) {
               const selJson = await selRes.json();
               if (selJson?.matchId) effectiveMatchId = selJson.matchId;
@@ -108,7 +154,7 @@ const PublicThemeRenderer: React.FC = () => {
         }
 
         // Fetch match data
-        const matchResponse = await fetch(`https://backend-prod-530t.onrender.com/api/public/matches/${effectiveMatchId}`);
+        const matchResponse = await fetch(`http://localhost:3000/api/public/matches/${effectiveMatchId}`);
         if (!matchResponse.ok) {
           throw new Error('Failed to fetch match data');
         }
@@ -116,7 +162,7 @@ const PublicThemeRenderer: React.FC = () => {
         setMatch(matchDataFetched);
 
         // Fetch matchData
-        const matchDataResponse = await fetch(`https://backend-prod-530t.onrender.com/api/public/matches/${effectiveMatchId}/matchdata`);
+        const matchDataResponse = await fetch(`http://localhost:3000/api/public/matches/${effectiveMatchId}/matchdata`);
         if (matchDataResponse.ok) {
           const matchDataJson = await matchDataResponse.json();
           setMatchData(matchDataJson);
@@ -189,47 +235,47 @@ const PublicThemeRenderer: React.FC = () => {
     // Pass tournament data to the appropriate component
     switch (view) {
       case 'Lower':
-        return <Lower tournament={tournament} round={round} match={match} />;
+        return <LowerComp tournament={tournament} round={round} match={match} />;
       case 'Upper':
-        return <Upper tournament={tournament} round={round} match={match} matchData={matchData} />;
+        return <UpperComp tournament={tournament} round={round} match={match} matchData={matchData} />;
       case 'Dom':
-        return <Dom tournament={tournament} round={round} match={match} matchData={matchData} />;
+        return <DomComp tournament={tournament} round={round} match={match} matchData={matchData} />;
       case 'Alerts':
-        return <Alerts tournament={tournament} round={round} match={match} matchData={matchData} />;
+        return <AlertsComp tournament={tournament} round={round} match={match} matchData={matchData} />;
       case 'LiveStats':
-        return <LiveStats tournament={tournament} round={round} match={match} matchData={matchData} />;
+        return <LiveStatsComp tournament={tournament} round={round} match={match} matchData={matchData} />;
       case 'LiveFrags':
-        return <LiveFrags tournament={tournament} round={round} match={match} matchData={matchData} />;
+        return <LiveFragsComp tournament={tournament} round={round} match={match} matchData={matchData} />;
       case 'MatchData':
-        return <MatchData tournament={tournament} round={round} match={match} matchData={matchData} />;
+        return <MatchDataComp tournament={tournament} round={round} match={match} matchData={matchData} />;
       case 'MatchFragrs':
-        return <MatchFragrs tournament={tournament} round={round} match={match} matchData={matchData} />;
+        return <MatchFragrsComp tournament={tournament} round={round} match={match} matchData={matchData} />;
       case 'WwcdSummary':
-        return <WwcdSummary tournament={tournament} round={round} match={match} matchData={matchData} />;
+        return <WwcdSummaryComp tournament={tournament} round={round} match={match} matchData={matchData} />;
         case 'WwcdStats':
-          return <WwcdStats tournament={tournament} round={round} match={match} matchData={matchData} />
+          return <WwcdStatsComp tournament={tournament} round={round} match={match} matchData={matchData} />
         case 'OverAllData':
-          return <OverallData tournament={tournament} round={round} match={match} matchData={matchData} />
+          return <OverallDataComp tournament={tournament} round={round} match={match} matchData={matchData} />
         case 'OverallFrags':
-        return <OverallFrags tournament={tournament} round={round} />
+        return <OverallFragsComp tournament={tournament} round={round} />
         case 'Schedule':
-        return <Schedule tournament={tournament} round={round} />
+        return <ScheduleComp tournament={tournament} round={round} />
         case 'CommingUpNext':
-        return <CommingUpNext tournament={tournament} round={round} match={match} />
+        return <CommingUpNextComp tournament={tournament} round={round} match={match} />
         case 'Champions':
-          return <Champions tournament={tournament} round={round}  />
+          return <ChampionsComp tournament={tournament} round={round}  />
         case '1stRunnerUp':
-          return <FirstRunnerUp tournament={tournament} round={round} />
+          return <FirstRunnerUpComp tournament={tournament} round={round} />
         case '2ndRunnerUp':
-          return <SecondRunnerUp tournament={tournament} round={round} />
+          return <SecondRunnerUpComp tournament={tournament} round={round} />
         case 'EventMvp':
-          return <EventMvp tournament={tournament} round={round} />
+          return <EventMvpComp tournament={tournament} round={round} />
         case 'MatchSummary':
-          return <MatchSummary tournament={tournament} round={round} match={match} />
+          return <MatchSummaryComp tournament={tournament} round={round} match={match} />
         case 'playerH2H':
-          return <PlayerH2H tournament={tournament} round={round} match={match} />
+          return <PlayerH2HComp tournament={tournament} round={round} match={match} />
         case 'TeamH2H':
-          return <TeamH2H tournament={tournament} round={round} match={match} />
+          return <TeamH2HComp tournament={tournament} round={round} match={match} />
       default:
         return (
           <div style={{

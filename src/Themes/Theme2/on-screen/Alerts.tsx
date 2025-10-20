@@ -71,19 +71,8 @@ const Alerts: React.FC<AlertsProps> = ({ tournament, round, match, matchData }) 
   const [animating, setAnimating] = useState<boolean>(false);
   const [showAlert, setShowAlert] = useState<boolean>(false);
   const [currentAlertTeam, setCurrentAlertTeam] = useState<Team | null>(null);
-  const shownTeamsRef = useRef<Set<string>>(new Set());
-  const [previousDataHash, setPreviousDataHash] = useState<string>('');
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const alertIdRef = useRef<number>(0);
-
-  // Create a simple hash of the data for comparison
-  const createDataHash = (data: any): string => {
-    if (!data || !data.teams) return '';
-    return data.teams.map((team: Team) =>
-      team.players.map((p: Player) => `${p._id}-${p.killNum}-${p.bHasDied}-${p.liveState}-${p.health}`).join(',')
-    ).join('|');
-  };
-
 
   useEffect(() => {
     if (matchData) {
@@ -128,53 +117,39 @@ const Alerts: React.FC<AlertsProps> = ({ tournament, round, match, matchData }) 
       handleLiveUpdate: (data: any) => {
         console.log('Alerts: Received liveMatchUpdate for match:', data._id);
 
-        // Create hash of incoming data for comparison
-        const newHash = createDataHash(data);
-
-        console.log('Alerts: Data hash comparison - previous:', previousDataHash, 'new:', newHash);
-
-        // Only process if data has actually changed
-        if (previousDataHash !== newHash) {
-          console.log('Alerts: Data has changed, processing update');
-          // Assume the update is for this component since matchDataId is set
-          if (data._id) {
-            console.log('Alerts: Updating localMatchData with live API data');
-            setLocalMatchData((prev: MatchData | null) => {
-              const newData = data;
-              // Check for team eliminations after update
-              if (newData.teams) {
-                for (const team of newData.teams) {
-                  if (team.players.every((p: Player) => p.health === 0 || p.bHasDied || p.liveState === 5)) {
-                    if (!shownTeamsRef.current.has(team._id)) {
-                      console.log('Alerts: Team fully eliminated in liveMatchUpdate:', team.teamTag, '- showing alert');
-                      shownTeamsRef.current.add(team._id);
-                      setCurrentAlertTeam(team);
-                      alertIdRef.current += 1;
-                      setShowAlert(true);
-                      setAnimating(true);
-                      setTimeout(() => setAnimating(false), 500);
-                      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                      timeoutRef.current = setTimeout(() => {
-                        console.log('Alerts: Auto-hiding alert after 5 seconds from liveMatchUpdate');
-                        setShowAlert(false);
-                        setCurrentAlertTeam(null);
-                        timeoutRef.current = null;
-                      }, 5000);
-                      break; // Only show one alert at a time
-                    } else {
-                      console.log('Alerts: Team already shown:', team.teamTag, '- skipping');
-                    }
-                  }
+        // Assume the update is for this component since matchDataId is set
+        if (data._id) {
+          console.log('Alerts: Updating localMatchData with live API data');
+          setLocalMatchData((prev: MatchData | null) => {
+            const newData = data;
+            // Check for teams with 4 dead players after update
+            if (newData.teams) {
+              for (const team of newData.teams) {
+                const deadPlayersCount = team.players.filter((p: Player) =>
+                  p.health === 0 || p.bHasDied || p.liveState === 5
+                ).length;
+                if (deadPlayersCount === 4) {
+                  console.log('Alerts: Team has 4 dead players in liveMatchUpdate:', team.teamTag, 'dead count:', deadPlayersCount);
+                  setCurrentAlertTeam(team);
+                  alertIdRef.current += 1;
+                  setShowAlert(true);
+                  setAnimating(true);
+                  setTimeout(() => setAnimating(false), 500);
+                  if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                  timeoutRef.current = setTimeout(() => {
+                    console.log('Alerts: Auto-hiding alert after 5 seconds from liveMatchUpdate');
+                    setShowAlert(false);
+                    setCurrentAlertTeam(null);
+                    timeoutRef.current = null;
+                  }, 5000);
+                  break; // Only show one alert at a time
                 }
               }
-              return newData;
-            });
-            setLastUpdateTime(Date.now());
-            setUpdateCount(prev => prev + 1);
-            setPreviousDataHash(newHash);
-          }
-        } else {
-          console.log('Alerts: Data unchanged, skipping processing');
+            }
+            return newData;
+          });
+          setLastUpdateTime(Date.now());
+          setUpdateCount(prev => prev + 1);
         }
       },
 
@@ -211,10 +186,12 @@ const Alerts: React.FC<AlertsProps> = ({ tournament, round, match, matchData }) 
               return team;
             });
             const updatedTeam = updatedTeams.find(t => t._id === data.teamId || t.teamId === data.teamId);
-            if (updatedTeam && updatedTeam.players.every((p: Player) => p.health === 0 || p.bHasDied || p.liveState === 5)) {
-              if (!shownTeamsRef.current.has(updatedTeam._id)) {
-                console.log('Alerts: Team fully eliminated in matchDataUpdate:', updatedTeam.teamTag, 'setting alert');
-                shownTeamsRef.current.add(updatedTeam._id);
+            if (updatedTeam) {
+              const deadPlayersCount = updatedTeam.players.filter((p: Player) =>
+                p.health === 0 || p.bHasDied || p.liveState === 5
+              ).length;
+              if (deadPlayersCount === 4) {
+                console.log('Alerts: Team has 4 dead players in matchDataUpdate:', updatedTeam.teamTag, 'dead count:', deadPlayersCount, 'setting alert');
                 setCurrentAlertTeam(updatedTeam);
                 alertIdRef.current += 1;
                 setShowAlert(true);
@@ -227,8 +204,6 @@ const Alerts: React.FC<AlertsProps> = ({ tournament, round, match, matchData }) 
                   setCurrentAlertTeam(null);
                   timeoutRef.current = null;
                 }, 5000);
-              } else {
-                console.log('Alerts: Team already shown:', updatedTeam.teamTag, '- skipping');
               }
             }
             return { ...prev, teams: updatedTeams };
@@ -268,10 +243,12 @@ const Alerts: React.FC<AlertsProps> = ({ tournament, round, match, matchData }) 
               return team;
             });
             const updatedTeam = newTeams.find(t => t._id === data.teamId || t.teamId === data.teamId);
-            if (updatedTeam && updatedTeam.players.every((p: Player) => p.health === 0 || p.bHasDied || p.liveState === 5)) {
-              if (!shownTeamsRef.current.has(updatedTeam._id)) {
-                console.log('Alerts: Team fully eliminated:', updatedTeam.teamTag, 'setting alert');
-                shownTeamsRef.current.add(updatedTeam._id);
+            if (updatedTeam) {
+              const deadPlayersCount = updatedTeam.players.filter((p: Player) =>
+                p.health === 0 || p.bHasDied || p.liveState === 5
+              ).length;
+              if (deadPlayersCount === 4) {
+                console.log('Alerts: Team has 4 dead players:', updatedTeam.teamTag, 'dead count:', deadPlayersCount, 'setting alert');
                 setCurrentAlertTeam(updatedTeam);
                 alertIdRef.current += 1;
                 setShowAlert(true);
@@ -284,8 +261,6 @@ const Alerts: React.FC<AlertsProps> = ({ tournament, round, match, matchData }) 
                   setCurrentAlertTeam(null);
                   timeoutRef.current = null;
                 }, 5000);
-              } else {
-                console.log('Alerts: Team already shown:', updatedTeam.teamTag, '- skipping');
               }
             }
             return { ...prev, teams: newTeams };
@@ -422,17 +397,9 @@ const Alerts: React.FC<AlertsProps> = ({ tournament, round, match, matchData }) 
   // Add effect to handle prop changes and force re-render
   useEffect(() => {
     if (matchData && matchData._id?.toString() !== matchDataId) {
-      console.log('MatchData prop changed, updating local state and resetting shown teams');
+      console.log('MatchData prop changed, updating local state');
       setLocalMatchData(matchData);
       setMatchDataId(matchData._id?.toString());
-      // Reset shown teams when component remounts or match changes
-      shownTeamsRef.current.clear();
-      setShowAlert(false);
-      setCurrentAlertTeam(null);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
     }
   }, [matchData, matchDataId]);
 
@@ -469,7 +436,7 @@ const Alerts: React.FC<AlertsProps> = ({ tournament, round, match, matchData }) 
   }
 
   // Alerts component UI
-  const alertPlayers = currentAlertTeam ? currentAlertTeam.players.filter(p => p.bHasDied) : [];
+  const alertPlayers = currentAlertTeam ? currentAlertTeam.players.filter(p => p.health === 0 || p.bHasDied || p.liveState === 5) : [];
   const alertTeam = currentAlertTeam ? sortedTeams.find(t => t._id === currentAlertTeam._id) : null;
   console.log('Alerts: Rendering with showAlert:', showAlert, 'currentAlertTeam:', currentAlertTeam?.teamTag, 'alertPlayers:', alertPlayers.map(p => p.playerName));
   return (

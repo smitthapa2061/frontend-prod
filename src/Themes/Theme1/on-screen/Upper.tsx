@@ -362,7 +362,7 @@ const Upper: React.FC<UpperProps> = ({ tournament, round, match, matchData }) =>
               <div className="w-[40px] h-[40px] mr-3">
                 <img src={team.teamLogo} alt={team.teamTag} className="w-full h-full object-contain" />
               </div>
-              <div className="flex-1 text-white font-[400] text-[2rem] mr-[10px] font-bebas" >{team.teamTag}</div>
+              <div className="flex-1 text-white font-[400] text-[2rem] mr-[10px] font-bebas relative w-[60px]" >{team.teamTag}</div>
               <div className="flex gap-[2px] w-[50px]   ">
   {team.players.slice(0, 4).map((player) => {
     const isDead = player.liveState === 5 || player.bHasDied;
@@ -402,12 +402,15 @@ const Upper: React.FC<UpperProps> = ({ tournament, round, match, matchData }) =>
     }
 
     return (
-      <div key={player._id} className=" w-[10px] h-[40px] bg-gray-600">
+      <div key={player._id} className=" w-[10px] h-[40px] bg-gray-600" style={{ position: 'relative' }}>
         {/* Health bar */}
         <div
           className={`transition-all duration-300 ${barColor}`}
           style={{
-            height: `${barHeight}px`
+            height: `${barHeight}px`,
+            position: 'absolute',
+            bottom: 0,
+            width: '100%'
           }}
         />
       </div>
