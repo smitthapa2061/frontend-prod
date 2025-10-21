@@ -68,220 +68,220 @@ const Dom: React.FC<DomProps> = React.memo(({ tournament, round, match, matchDat
   const prevDataRef = useRef<any[]>([]);
   const prevKillsMap = useRef<{ [key: string]: number }>({});
   const displayTimerRef = useRef<number | null>(null);
+  const firstBloodTriggered = useRef(false);
+  const previousDeadPlayersRef = useRef<Player[]>([]);
 
-  // Get kill streak message
-  const getKillStreakMessage = (kills: number) => {
-    if (kills >= 8) return 'UNSTOPPABLE';
-    if (kills >= 5) return 'RAMPAGE';
-    if (kills >= 3) return 'DOMINATION';
-    return '';
-  };
-
-  // Get milestone level for comparison
-  const getMilestoneLevel = (milestone: string) => {
-    switch (milestone) {
-      case 'DOMINATION': return 1;
-      case 'RAMPAGE': return 2;
-      case 'UNSTOPPABLE': return 3;
-      default: return 0;
-    }
-  };
 
   // Handle socket updates with loop prevention
-  const handleSocketUpdate = useCallback((data: any) => {
-    // Handle different event types
-    let updatedMatchData: MatchData | null = localMatchData;
+  // ✅ Ref to always hold the latest match data (no re-renders)
+const matchDataRef = useRef<MatchData | null>(matchData || null);
+useEffect(() => {
+  matchDataRef.current = localMatchData;
+}, [localMatchData]);
 
-    if (data._id?.toString() === matchDataId && data.teams) {
-      // Full match data update (liveMatchUpdate, matchDataUpdated)
-      updatedMatchData = data;
-    } else if (data.matchDataId === matchDataId && data.teamId && data.players) {
-      // Player stats update
-      if (localMatchData) {
-        updatedMatchData = {
-          ...localMatchData,
-          teams: localMatchData.teams.map(team =>
-            team._id === data.teamId || team.teamId === data.teamId
-              ? {
-                  ...team,
-                  players: team.players.map(player =>
-                    data.players.find((p: any) => p._id === player._id)
-                      ? { ...player, ...data.players.find((p: any) => p._id === player._id) }
-                      : player
-                  )
-                }
-              : team
-          )
-        };
-      }
-    } else if (data.matchDataId === matchDataId && data.teamId && data.changes?.players) {
-      // Bulk team update
-      if (localMatchData) {
-        updatedMatchData = {
-          ...localMatchData,
-          teams: localMatchData.teams.map(team =>
-            team._id === data.teamId || team.teamId === data.teamId
-              ? {
-                  ...team,
-                  players: team.players.map(player => {
-                    const update = data.changes.players.find((p: any) => p._id?.toString() === player._id?.toString());
-                    return update ? { ...player, ...update } : player;
-                  })
-                }
-              : team
-          )
-        };
-      }
+// ✅ Socket update handler (no loop)
+const handleSocketUpdate = useCallback((data: any) => {
+  const currentData = matchDataRef.current;
+  let updatedMatchData: MatchData | null = currentData;
+
+  if (data._id?.toString() === matchDataId && data.teams) {
+    updatedMatchData = data;
+  } else if (data.matchDataId === matchDataId && data.teamId && data.players) {
+    if (currentData) {
+      updatedMatchData = {
+        ...currentData,
+        teams: currentData.teams.map(team =>
+          team._id === data.teamId || team.teamId === data.teamId
+            ? {
+                ...team,
+                players: team.players.map(player =>
+                  data.players.find((p: any) => p._id === player._id)
+                    ? { ...player, ...data.players.find((p: any) => p._id === player._id) }
+                    : player
+                )
+              }
+            : team
+        )
+      };
     }
-
-    if (updatedMatchData) {
-      // Process data like the reference example - only compare kill numbers
-      const combinedData = updatedMatchData.teams.flatMap(team =>
-        team.players.map(player => ({
-          _id: player._id,
-          killNum: player.killNum || 0
-        }))
-      ).sort((a, b) => a._id.localeCompare(b._id));
-
-      const prevDataSorted = prevDataRef.current.sort((a: any, b: any) => a._id.localeCompare(b._id));
-
-      if (JSON.stringify(combinedData) !== JSON.stringify(prevDataSorted)) {
-        console.log('Dom: Kill data changed, updating localMatchData');
-        prevDataRef.current = combinedData;
-        setLocalMatchData(updatedMatchData);
-      } else {
-        console.log('Dom: Kill data unchanged, skipping update');
-      }
+  } else if (data.matchDataId === matchDataId && data.teamId && data.changes?.players) {
+    if (currentData) {
+      updatedMatchData = {
+        ...currentData,
+        teams: currentData.teams.map(team =>
+          team._id === data.teamId || team.teamId === data.teamId
+            ? {
+                ...team,
+                players: team.players.map(player => {
+                  const update = data.changes.players.find((p: any) => p._id?.toString() === player._id?.toString());
+                  return update ? { ...player, ...update } : player;
+                })
+              }
+            : team
+        )
+      };
     }
-  }, [matchDataId, localMatchData]);
+  }
 
-  // Update local state when props change - only reset on new match
-  useEffect(() => {
-    if (matchData) {
-      const newMatchDataId = matchData._id?.toString();
-      if (newMatchDataId !== matchDataId) {
-        // New match - reset everything
-        setLocalMatchData(matchData);
-        setMatchDataId(newMatchDataId);
-        setIsVisible(false);
-        setDisplayedPlayer(null);
-        prevDataRef.current = [];
-        prevKillsMap.current = {};
-        if (displayTimerRef.current) {
-          clearTimeout(displayTimerRef.current);
-          displayTimerRef.current = null;
-        }
-      } else if (!localMatchData) {
-        // Initial load
-        setLocalMatchData(matchData);
-      }
-      // Don't update localMatchData from props if it's the same match - let socket handle updates
-    }
-  }, [matchData, matchDataId, localMatchData]);
+  if (updatedMatchData) {
+    const combinedData = updatedMatchData.teams
+      .flatMap(team => team.players.map(player => ({ _id: player._id, killNum: player.killNum || 0 })))
+      .sort((a, b) => a._id.localeCompare(b._id));
 
-  // Socket setup
-  useEffect(() => {
-    if (!matchDataId) return;
+    const prevDataSorted = prevDataRef.current.sort((a: any, b: any) => a._id.localeCompare(b._id));
 
-    const socketManager = SocketManager.getInstance();
-    const freshSocket = socketManager.connect();
+    if (JSON.stringify(combinedData) !== JSON.stringify(prevDataSorted)) {
+      console.log("Dom: Kill data changed, updating localMatchData");
+      prevDataRef.current = combinedData;
+      setLocalMatchData(updatedMatchData);
+      matchDataRef.current = updatedMatchData; // ✅ keep ref updated
 
-    // Listen to events that can update match data
-    freshSocket.off('liveMatchUpdate');
-    freshSocket.off('matchDataUpdated');
-    freshSocket.off('playerStatsUpdated');
-    freshSocket.off('teamStatsUpdated');
-    freshSocket.off('bulkTeamUpdate');
+      // Process alerts only when data changes
+      let alertData = null;
+      let triggered = false;
+      let alertReason = '';
 
-    freshSocket.on('liveMatchUpdate', handleSocketUpdate);
-    freshSocket.on('matchDataUpdated', handleSocketUpdate);
-    freshSocket.on('playerStatsUpdated', handleSocketUpdate);
-    freshSocket.on('teamStatsUpdated', handleSocketUpdate);
-    freshSocket.on('bulkTeamUpdate', handleSocketUpdate);
+      // Log all players with changed data
+      const allPlayers = updatedMatchData.teams.flatMap(team => team.players);
+    const changedPlayers = allPlayers.filter(player => {
+  const prevKills = prevKillsMap.current[player.playerName] ?? 0;
+  return player.killNum > prevKills; // ✅ only count kill increases
+});
 
-    return () => {
-      freshSocket.off('liveMatchUpdate');
-      freshSocket.off('matchDataUpdated');
-      freshSocket.off('playerStatsUpdated');
-      freshSocket.off('teamStatsUpdated');
-      freshSocket.off('bulkTeamUpdate');
-      socketManager.disconnect();
-    };
-  }, [matchDataId, handleSocketUpdate]);
 
-  // Milestone detection with loop prevention using useMemo
-  const milestoneAchiever = useMemo(() => {
-    if (!localMatchData || isVisible || displayTimerRef.current) return null;
+      console.log("Dom: Latest player changes:");
+      changedPlayers.forEach(player => {
+        const prevKills = prevKillsMap.current[player.playerName] || 0;
+        const prevDied = previousDeadPlayersRef.current.some(p => p.playerName === player.playerName);
+        console.log(`  ${player.playerName}: kills ${prevKills} -> ${player.killNum}`);
+      });
 
-    let achiever: (Player & { teamTag: string; teamLogo: string; milestone: string }) | null = null;
-    let highestMilestoneLevel = 0;
+      // Check for first blood - only the first player to get their first kill gets this milestone
+      if (!firstBloodTriggered.current) {
+        for (const team of updatedMatchData.teams) {
+          for (const player of team.players) {
+            const playerName = player.playerName;
+            const currentKills = player.killNum || 0;
+            const previousKills = prevKillsMap.current[playerName] || 0;
 
-    // Find the player with the highest new milestone
-    for (const team of localMatchData.teams) {
-      for (const player of team.players) {
-        const playerName = player.playerName;
-        const currentKills = player.killNum || 0;
-        const previousKills = prevKillsMap.current[playerName] || 0;
-
-        if (currentKills >= 8 && previousKills < 8) {
-          achiever = {
-            ...player,
-            teamTag: team.teamTag,
-            teamLogo: team.teamLogo,
-            milestone: 'UNSTOPPABLE'
-          };
-          highestMilestoneLevel = 3;
-          break;
-        } else if (currentKills >= 5 && previousKills < 5) {
-          achiever = {
-            ...player,
-            teamTag: team.teamTag,
-            teamLogo: team.teamLogo,
-            milestone: 'RAMPAGE'
-          };
-          highestMilestoneLevel = 2;
-        } else if (currentKills >= 3 && previousKills < 3 && highestMilestoneLevel < 2) {
-          achiever = {
-            ...player,
-            teamTag: team.teamTag,
-            teamLogo: team.teamLogo,
-            milestone: 'DOMINATION'
-          };
-          highestMilestoneLevel = 1;
+            if (currentKills === 1 && previousKills === 0) {
+              alertData = {
+                ...player,
+                teamTag: team.teamTag,
+                teamLogo: team.teamLogo,
+                milestone: 'FIRST BLOOD'
+              };
+              alertReason = 'FIRST BLOOD';
+              triggered = true;
+              firstBloodTriggered.current = true;
+              break;
+            }
+          }
+          if (triggered) break;
         }
       }
-      if (achiever) break;
-    }
 
-    return achiever;
-  }, [localMatchData, isVisible]);
 
-  // Handle milestone display
-  useEffect(() => {
-    if (milestoneAchiever) {
-      console.log('Dom: Milestone achieved -', milestoneAchiever.playerName, 'with', milestoneAchiever.killNum, 'kills,', milestoneAchiever.milestone);
+      // Check for kill streaks - show the latest achievement reached (reverse order to get most recent)
+      if (!triggered) {
+        // Process teams in reverse order
+        for (let teamIndex = updatedMatchData.teams.length - 1; teamIndex >= 0; teamIndex--) {
+          const team = updatedMatchData.teams[teamIndex];
+          // Process players in reverse order
+          for (let playerIndex = team.players.length - 1; playerIndex >= 0; playerIndex--) {
+            const player = team.players[playerIndex];
+            const playerName = player.playerName;
+            const currentKills = player.killNum || 0;
+            const previousKills = prevKillsMap.current[playerName] || 0;
+
+            if (currentKills > previousKills) {
+              if (currentKills >= 8 && previousKills < 8) {
+                alertData = {
+                  ...player,
+                  teamTag: team.teamTag,
+                  teamLogo: team.teamLogo,
+                  milestone: 'UNSTOPPABLE'
+                };
+                alertReason = 'UNSTOPPABLE';
+                triggered = true;
+                break;
+              } else if (currentKills >= 5 && previousKills < 5) {
+                alertData = {
+                  ...player,
+                  teamTag: team.teamTag,
+                  teamLogo: team.teamLogo,
+                  milestone: 'RAMPAGE'
+                };
+                alertReason = 'RAMPAGE';
+                triggered = true;
+                break;
+              } else if (currentKills >= 3 && previousKills < 3) {
+                alertData = {
+                  ...player,
+                  teamTag: team.teamTag,
+                  teamLogo: team.teamLogo,
+                  milestone: 'DOMINATION'
+                };
+                alertReason = 'DOMINATION';
+                triggered = true;
+                break;
+              }
+            }
+          }
+          if (triggered) break;
+        }
+      }
 
       // Update kills map
-      const newKillsMap = { ...prevKillsMap.current };
-      for (const team of localMatchData!.teams) {
-        for (const player of team.players) {
-          newKillsMap[player.playerName] = player.killNum || 0;
+      updatedMatchData.teams.forEach(team => {
+        team.players.forEach(player => {
+          prevKillsMap.current[player.playerName] = player.killNum || 0;
+        });
+      });
+
+      if (triggered && alertData) {
+        setDisplayedPlayer(alertData);
+        setIsVisible(true);
+        if (displayTimerRef.current) {
+          clearTimeout(displayTimerRef.current);
         }
+        displayTimerRef.current = window.setTimeout(() => {
+          setIsVisible(false);
+          setDisplayedPlayer(null);
+          displayTimerRef.current = null;
+        }, 10000);
+        console.log(`Dom: Triggering alert for ${alertData.playerName} - ${alertReason}`);
       }
-      prevKillsMap.current = newKillsMap;
-
-      setDisplayedPlayer(milestoneAchiever);
-      setIsVisible(true);
-
-      // Hide after 5 seconds
-      displayTimerRef.current = window.setTimeout(() => {
-        console.log('Dom: Hiding milestone display after 5 seconds');
-        setIsVisible(false);
-        setDisplayedPlayer(null);
-        displayTimerRef.current = null;
-      }, 5000);
+    } else {
+      console.log("Dom: Kill data unchanged, skipping update");
     }
-  }, [milestoneAchiever, localMatchData]);
+  }
+}, [matchDataId]); // ✅ removed localMatchData dependency
+
+// ✅ Socket setup — only runs once per matchDataId
+useEffect(() => {
+  if (!matchDataId) return;
+
+  const socketManager = SocketManager.getInstance();
+  const socket = socketManager.connect();
+
+  const events = [
+    "liveMatchUpdate",
+    "matchDataUpdated",
+    "playerStatsUpdated",
+    "teamStatsUpdated",
+    "bulkTeamUpdate",
+  ];
+
+  events.forEach(evt => socket.off(evt)); // clear before attach
+  events.forEach(evt => socket.on(evt, handleSocketUpdate));
+
+  return () => {
+    events.forEach(evt => socket.off(evt));
+    socketManager.disconnect();
+  };
+}, [matchDataId, handleSocketUpdate]);
+
 
   if (!localMatchData) {
     return (
@@ -366,4 +366,5 @@ const Dom: React.FC<DomProps> = React.memo(({ tournament, round, match, matchDat
 });
 
 export default Dom;
+
 

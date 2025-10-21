@@ -138,24 +138,20 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round })
         updatedTeams.sort((a, b) => b.total! - a.total!);
 
         // Calculate pointsChange and leadOverNext
-const newTotals = new Map<string, number>();
+        const newTotals = new Map<string, number>();
+        updatedTeams.forEach((team, index) => {
+          team.rank = index + 1;
+          const prevTotal = previousTotals.get(team.teamId) || 0;
+          team.pointsChange = team.total! - prevTotal;
 
-updatedTeams.forEach((team, index) => {
-  team.rank = index + 1;
+          // leadOverNext only for rank 1
+          if (team.rank === 1 && updatedTeams.length > 1) {
+            const secondTeam = updatedTeams[1];
+            team.leadOverNext = team.total! - secondTeam.total!;
+          }
 
-  const prevTotal = previousTotals.get(team.teamId) || 0;
-  team.pointsChange = team.total! - prevTotal;
-
-  // Calculate leadOverNext for every team except the last one
-  if (index < updatedTeams.length - 1) {
-    const nextTeam = updatedTeams[index + 1];
-    team.leadOverNext = team.total! - nextTeam.total!;
-  } else {
-    team.leadOverNext = 0; // no next team
-  }
-
-  newTotals.set(team.teamId, team.total!);
-});
+          newTotals.set(team.teamId, team.total!);
+        });
 
         setPreviousTotals(newTotals);
         setOverallData({ ...data, teams: updatedTeams });
@@ -270,16 +266,17 @@ updatedTeams.forEach((team, index) => {
               <span>{team.placePoints}</span>
               <span>{team.total}</span>
               <span>{team.wwcd || 0}</span>
-      <span
-  style={{
+              <span  style={{
     background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`,
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-  }}
->
-  {team.leadOverNext ?? 0}
-</span>
+    backgroundClip: 'text', // for some browsers
+
+  }}>
+                {team.rank === 1
+                  ? `${team.leadOverNext || 0}`
+                  : team.pointsChange! > 0 ? `${team.pointsChange}` : team.pointsChange! < 0 ? team.pointsChange : '0'}
+              </span>
             </div>
           </motion.div>
         ))}
