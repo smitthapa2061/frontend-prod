@@ -120,7 +120,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({ tournament, round, match })
 
   if (loading) {
     return (
-      <div style={{ width: '1920px', height: '1080px', backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: '1920px', height: '1080px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ color: 'white', fontSize: '24px', fontFamily: 'Righteous' }}>Loading...</div>
       </div>
     );

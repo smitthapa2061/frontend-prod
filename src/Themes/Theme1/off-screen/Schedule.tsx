@@ -42,6 +42,9 @@ interface Match {
 interface ScheduleProps {
   tournament: Tournament;
   round?: Round | null;
+  matches?: Match[];
+  matchDatas?: any[];
+  selectedScheduleMatches?: string[];
 }
 
 const getMapImage = (mapName?: string) => {
@@ -59,63 +62,81 @@ const getMapImage = (mapName?: string) => {
   }
 };
 
-const Schedule: React.FC<ScheduleProps> = ({ tournament, round }) => {
+const Schedule: React.FC<ScheduleProps> = ({ tournament, round, matches: propMatches, matchDatas: propMatchDatas, selectedScheduleMatches }) => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const run = async () => {
-      if (!round?._id) return;
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await fetch(`https://backend-prod-530t.onrender.com/api/public/rounds/${round._id}/matches`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const matchesData: Match[] = await res.json();
+    if (propMatches && propMatchDatas) {
+      // Use props if available
+      const matchesWithTeams = propMatches.map((match, idx) => ({
+        ...match,
+        teams: propMatchDatas[idx]?.teams || []
+      }));
+      setMatches(matchesWithTeams);
+      setLoading(false);
+    } else if (round?._id) {
+      // Fallback to fetching
+      const run = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          const res = await fetch(`https://backend-prod-530t.onrender.com/api/public/rounds/${round._id}/matches`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const matchesData: Match[] = await res.json();
 
-        // Fetch selected match
-        const selectedRes = await fetch(`https://backend-prod-530t.onrender.com/api/public/tournaments/${tournament._id}/rounds/${round._id}/selected-match`);
-        let selectedMatchId = null;
-        if (selectedRes.ok) {
-          const selectedData = await selectedRes.json();
-          selectedMatchId = selectedData.matchId;
+          // Fetch selected match
+          const selectedRes = await fetch(`https://backend-prod-530t.onrender.com/api/public/tournaments/${tournament._id}/rounds/${round._id}/selected-match`);
+          let selectedMatchId = null;
+          if (selectedRes.ok) {
+            const selectedData = await selectedRes.json();
+            selectedMatchId = selectedData.matchId;
+          }
+          setSelectedMatchId(selectedMatchId);
+
+          // Fetch matchData for each match to get teams
+          const matchDataPromises = matchesData.map(match =>
+            fetch(`https://backend-prod-530t.onrender.com/api/public/matches/${match._id}/matchdata`)
+              .then(res => res.ok ? res.json() : null)
+              .catch(() => null)
+          );
+          const matchDatas = await Promise.all(matchDataPromises);
+
+          // Attach teams to matches
+          const matchesWithTeams = matchesData.map((match, idx) => ({
+            ...match,
+            teams: matchDatas[idx]?.teams || []
+          }));
+
+          setMatches(matchesWithTeams);
+        } catch (e: any) {
+          console.error('Schedule: failed to fetch matches', e);
+          setError('Failed to load matches');
+        } finally {
+          setLoading(false);
         }
-        setSelectedMatchId(selectedMatchId);
-
-        // Fetch matchData for each match to get teams
-        const matchDataPromises = matchesData.map(match =>
-          fetch(`https://backend-prod-530t.onrender.com/api/public/matches/${match._id}/matchdata`)
-            .then(res => res.ok ? res.json() : null)
-            .catch(() => null)
-        );
-        const matchDatas = await Promise.all(matchDataPromises);
-
-        // Attach teams to matches
-        const matchesWithTeams = matchesData.map((match, idx) => ({
-          ...match,
-          teams: matchDatas[idx]?.teams || []
-        }));
-
-        setMatches(matchesWithTeams);
-      } catch (e: any) {
-        console.error('Schedule: failed to fetch matches', e);
-        setError('Failed to load matches');
-      } finally {
-        setLoading(false);
-      }
-    };
-    run();
-  }, [round?._id, tournament._id]);
+      };
+      run();
+    } else {
+      setLoading(false);
+    }
+  }, [round?._id, tournament._id, propMatches, propMatchDatas]);
 
   const sortedMatches = useMemo(() => {
+    // Filter to only selected matches if any are selected
+    let filteredMatches = matches;
+    if (selectedScheduleMatches && selectedScheduleMatches.length > 0) {
+      filteredMatches = matches.filter(match => selectedScheduleMatches.includes(match._id));
+    }
+
     // Remove duplicates by matchNo
-    const uniqueMatches = matches.filter((match, index, self) =>
+    const uniqueMatches = filteredMatches.filter((match, index, self) =>
       index === self.findIndex(m => (m.matchNo || m._matchNo) === (match.matchNo || match._matchNo))
     );
     return uniqueMatches.sort((a, b) => (a.matchNo || a._matchNo || 0) - (b.matchNo || b._matchNo || 0));
-  }, [matches]);
+  }, [matches, selectedScheduleMatches]);
 
   if (!round) {
     return (

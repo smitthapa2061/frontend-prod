@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import api from '../login/api.tsx';
 
 // Import theme components
 import Lower from '../Themes/Theme1/on-screen/Lower.tsx';
@@ -77,6 +78,26 @@ interface MatchData {
   teams: any[];
 }
 
+interface OverallData {
+  tournamentId: string;
+  roundId: string;
+  userId: string;
+  teams: any[];
+  createdAt: string;
+}
+
+interface MatchData {
+  _id: string;
+  teams: any[];
+}
+
+interface Match {
+  _id: string;
+  matchName?: string;
+  matchNo?: number;
+  _matchNo?: number;
+}
+
 const PublicThemeRenderer: React.FC = () => {
   const { tournamentId, roundId, matchId } = useParams<{
     tournamentId: string;
@@ -87,6 +108,7 @@ const PublicThemeRenderer: React.FC = () => {
   const theme = searchParams.get('theme') || 'Theme1';
   const view = searchParams.get('view') || 'Lower';
   const followSelected = (searchParams.get('followSelected') || 'false').toLowerCase() === 'true';
+  const selectedScheduleMatchIds = searchParams.get('scheduleMatches')?.split(',') || [];
 
   const isTheme1 = theme === 'Theme1';
   const LowerComp = isTheme1 ? Lower : Lower2;
@@ -115,6 +137,10 @@ const PublicThemeRenderer: React.FC = () => {
   const [round, setRound] = useState<Round | null>(null);
   const [match, setMatch] = useState<Match | null>(null);
   const [matchData, setMatchData] = useState<MatchData | null>(null);
+  const [overallData, setOverallData] = useState<OverallData | null>(null);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [matchDatas, setMatchDatas] = useState<MatchData[]>([]);
+  const [selectedScheduleMatches, setSelectedScheduleMatches] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -125,47 +151,95 @@ const PublicThemeRenderer: React.FC = () => {
       try {
         setLoading(true);
 
-        // Use direct fetch to bypass authentication for public access
-        const tournamentResponse = await fetch(`http://localhost:3000/api/public/tournaments/${tournamentId}`);
-        if (!tournamentResponse.ok) {
-          throw new Error('Failed to fetch tournament data');
+        // Determine what data is needed based on the view
+        const needsOverallData = ['OverAllData', 'LiveStats', '1stRunnerUp', '2ndRunnerUp', 'EventMvp'].includes(view);
+        const needsMatches = ['OverAllData', 'Schedule'].includes(view);
+        const needsMatchDatas = ['OverAllData', 'Schedule'].includes(view);
+        const needsMatchData = ['Upper', 'Dom', 'Alerts', 'LiveStats', 'LiveFrags', 'MatchData', 'MatchFragrs', 'WwcdSummary', 'WwcdStats'].includes(view);
+
+        // Always fetch basic data
+        const basePromises: Promise<any>[] = [
+          api.get(`public/tournaments/${tournamentId}`),
+          api.get(`public/tournaments/${tournamentId}/rounds/${roundId}`),
+        ];
+
+        if (followSelected) {
+          basePromises.push(api.get(`public/tournaments/${tournamentId}/rounds/${roundId}/selected-match`).catch(() => null));
         }
-        const tournamentData = await tournamentResponse.json();
+
+        if (needsMatches) {
+          basePromises.push(api.get(`public/rounds/${roundId}/matches`));
+        }
+
+        const baseResults = await Promise.all(basePromises);
+        const tournamentData = baseResults[0].data;
         setTournament(tournamentData);
 
-        // Fetch round data
-        const roundResponse = await fetch(`http://localhost:3000/api/public/tournaments/${tournamentId}/rounds/${roundId}`);
-        if (!roundResponse.ok) {
-          throw new Error('Failed to fetch round data');
-        }
-        const roundData = await roundResponse.json();
+        const roundData = baseResults[1].data;
         setRound(roundData);
 
-        // Optionally resolve selected matchId on refresh if followSelected is true
-        let effectiveMatchId = matchId;
+        let selectedMatchResponse = null;
+        let matchesResponse = null;
+
         if (followSelected) {
-          try {
-            const selRes = await fetch(`http://localhost:3000/api/public/tournaments/${tournamentId}/rounds/${roundId}/selected-match`);
-            if (selRes.ok) {
-              const selJson = await selRes.json();
-              if (selJson?.matchId) effectiveMatchId = selJson.matchId;
-            }
-          } catch {}
+          selectedMatchResponse = baseResults[2];
         }
 
-        // Fetch match data
-        const matchResponse = await fetch(`http://localhost:3000/api/public/matches/${effectiveMatchId}`);
-        if (!matchResponse.ok) {
-          throw new Error('Failed to fetch match data');
+        if (needsMatches) {
+          matchesResponse = baseResults[followSelected ? 3 : 2];
         }
-        const matchDataFetched = await matchResponse.json();
+
+        // Resolve effective matchId
+        let effectiveMatchId = matchId;
+        if (followSelected && selectedMatchResponse?.data?.matchId) {
+          effectiveMatchId = selectedMatchResponse.data.matchId;
+        }
+
+        // Fetch match-specific data
+        const matchPromises: Promise<any>[] = [api.get(`public/matches/${effectiveMatchId}`)];
+        if (needsMatchData) {
+          matchPromises.push(api.get(`public/matches/${effectiveMatchId}/matchdata`).catch(() => null));
+        }
+
+        const matchResults = await Promise.all(matchPromises);
+        const matchDataFetched = matchResults[0].data;
         setMatch(matchDataFetched);
 
-        // Fetch matchData
-        const matchDataResponse = await fetch(`http://localhost:3000/api/public/matches/${effectiveMatchId}/matchdata`);
-        if (matchDataResponse.ok) {
-          const matchDataJson = await matchDataResponse.json();
-          setMatchData(matchDataJson);
+        if (needsMatchData && matchResults[1]) {
+          setMatchData(matchResults[1].data);
+        }
+
+        // Fetch additional data in parallel
+        const additionalPromises: Promise<any>[] = [];
+
+        if (needsOverallData) {
+          additionalPromises.push(api.get(`public/tournaments/${tournamentId}/rounds/${roundId}/overall`).catch(() => null));
+        }
+
+        if (needsMatchDatas && matchesResponse) {
+          const matchesData = matchesResponse.data;
+          setMatches(matchesData);
+          additionalPromises.push(
+            ...matchesData.map((match: Match) =>
+              api.get(`public/matches/${match._id}/matchdata`).catch(() => null)
+            )
+          );
+        }
+
+        if (additionalPromises.length > 0) {
+          const additionalResults = await Promise.all(additionalPromises);
+
+          if (needsOverallData) {
+            const overallResponse = additionalResults.shift();
+            if (overallResponse) {
+              setOverallData(overallResponse.data);
+            }
+          }
+
+          if (needsMatchDatas) {
+            const validMatchDatas = additionalResults.filter(result => result !== null).map(result => result.data);
+            setMatchDatas(validMatchDatas);
+          }
         }
 
         setError(null);
@@ -178,7 +252,7 @@ const PublicThemeRenderer: React.FC = () => {
     };
 
     fetchData();
-  }, [tournamentId, roundId, matchId]);
+  }, [tournamentId, roundId, matchId, followSelected, view]);
 
   const renderView = () => {
     if (loading) {
@@ -243,7 +317,7 @@ const PublicThemeRenderer: React.FC = () => {
       case 'Alerts':
         return <AlertsComp tournament={tournament} round={round} match={match} matchData={matchData} />;
       case 'LiveStats':
-        return <LiveStatsComp tournament={tournament} round={round} match={match} matchData={matchData} />;
+        return <LiveStatsComp tournament={tournament} round={round} match={match} matchData={matchData} overallData={overallData} />;
       case 'LiveFrags':
         return <LiveFragsComp tournament={tournament} round={round} match={match} matchData={matchData} />;
       case 'MatchData':
@@ -255,21 +329,21 @@ const PublicThemeRenderer: React.FC = () => {
         case 'WwcdStats':
           return <WwcdStatsComp tournament={tournament} round={round} match={match} matchData={matchData} />
         case 'OverAllData':
-          return <OverallDataComp tournament={tournament} round={round} match={match} matchData={matchData} />
+          return <OverallDataComp tournament={tournament} round={round} match={match} matchData={matchData} overallData={overallData} matches={matches} matchDatas={matchDatas} />
         case 'OverallFrags':
         return <OverallFragsComp tournament={tournament} round={round} />
         case 'Schedule':
-        return <ScheduleComp tournament={tournament} round={round} />
+        return <ScheduleComp tournament={tournament} round={round} matches={matches} matchDatas={matchDatas} selectedScheduleMatches={selectedScheduleMatchIds} />
         case 'CommingUpNext':
         return <CommingUpNextComp tournament={tournament} round={round} match={match} />
         case 'Champions':
           return <ChampionsComp tournament={tournament} round={round}  />
         case '1stRunnerUp':
-          return <FirstRunnerUpComp tournament={tournament} round={round} />
+          return <FirstRunnerUpComp tournament={tournament} round={round} overallData={overallData} />
         case '2ndRunnerUp':
-          return <SecondRunnerUpComp tournament={tournament} round={round} />
+          return <SecondRunnerUpComp tournament={tournament} round={round} overallData={overallData} />
         case 'EventMvp':
-          return <EventMvpComp tournament={tournament} round={round} />
+          return <EventMvpComp tournament={tournament} round={round} overallData={overallData} />
         case 'MatchSummary':
           return <MatchSummaryComp tournament={tournament} round={round} match={match} />
         case 'playerH2H':
@@ -297,7 +371,7 @@ const PublicThemeRenderer: React.FC = () => {
   return (
     <div style={{
       width: '1920px',
-      height: '1080px',
+      height: '1400px',
  
       top: 0,
       left: 0,
@@ -312,3 +386,4 @@ const PublicThemeRenderer: React.FC = () => {
 };
 
 export default PublicThemeRenderer;
+

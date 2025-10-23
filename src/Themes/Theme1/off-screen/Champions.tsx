@@ -178,7 +178,7 @@ className='bg-white w-[700px] h-[120px] skew-x-[20deg]'>
 background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`,
 
 
-}} className="w-full h-[40%] absolute top-[900px] z-10" >
+}} className="w-full h-[20%] absolute top-[900px] z-10" >
 
 
 <div className='absolute top-[30px] left-[70px]'>

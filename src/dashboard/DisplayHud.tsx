@@ -27,6 +27,7 @@ const DisplayHud: React.FC = () => {
   const [matchesMap, setMatchesMap] = useState<Record<string, Match[]>>({});
   const [expandedRounds, setExpandedRounds] = useState<Record<string, string | null>>({});
   const [selectedMatches, setSelectedMatches] = useState<Record<string, string | null>>({});
+  const [selectedScheduleMatches, setSelectedScheduleMatches] = useState<Record<string, string[]>>({});
   const [user, setUser] = useState<any>(null);
   const [pollingKey, setPollingKey] = useState(0); // Force re-render polling component
   // Theme selection per tournament
@@ -103,6 +104,20 @@ const DisplayHud: React.FC = () => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  // Helper to open the schedule viewer with selected matches
+  const openScheduleViewer = (
+    tournamentId: string,
+    roundId: string,
+    selectedMatchIds: string[],
+    theme: string
+  ) => {
+    if (selectedMatchIds.length === 0) return;
+    // For schedule view, we can pass the first match as the main match, but the component will use all matches
+    const scheduleMatchesParam = selectedMatchIds.join(',');
+    const url = `/public/tournament/${tournamentId}/round/${roundId}/match/${selectedMatchIds[0]}?theme=${encodeURIComponent(theme)}&view=Schedule&followSelected=true&scheduleMatches=${encodeURIComponent(scheduleMatchesParam)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const toggleTournament = (tournamentId: string) => {
     if (expandedTournaments.includes(tournamentId)) {
       setExpandedTournaments(prev => prev.filter(id => id !== tournamentId));
@@ -160,6 +175,24 @@ const DisplayHud: React.FC = () => {
     } catch (err) {
       console.error('Error selecting/deselecting match:', err);
     }
+  };
+
+  // Schedule match selection (multiple matches for Schedule view)
+  const onScheduleMatchCheckboxChange = (
+    tournamentId: string,
+    roundId: string,
+    matchId: string,
+    checked: boolean
+  ) => {
+    const key = `${tournamentId}_${roundId}`;
+    setSelectedScheduleMatches(prev => {
+      const current = prev[key] || [];
+      if (checked) {
+        return { ...prev, [key]: [...current, matchId] };
+      } else {
+        return { ...prev, [key]: current.filter(id => id !== matchId) };
+      }
+    });
   };
 
   return (
@@ -243,17 +276,37 @@ const DisplayHud: React.FC = () => {
 
                       {isRoundExpanded && matchesMap[key]?.length > 0 && (
                         <div style={{ marginTop: '0.5rem', paddingLeft: '1rem' }}>
-                          {matchesMap[key].map((m, index) => (
-                            <label key={m._id} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 0.8rem', background: '#f1f1f1', borderRadius: '4px', marginBottom: '0.3rem', fontSize: '0.95rem', cursor: 'pointer', userSelect: 'none' }}>
-                              <input
-                                type="checkbox"
-                                checked={selectedMatchId === m._id}
-                                onChange={e => onMatchCheckboxChange(t._id, r._id, m._id, e.target.checked)}
-                                style={{ marginRight: '0.8rem', cursor: 'pointer' }}
-                              />
-                              {m.matchName || `Match ${index + 1}`}
-                            </label>
-                          ))}
+                          {/* Regular match selection */}
+                          <div style={{ marginBottom: '1rem' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Select Match for Live Views:</div>
+                            {matchesMap[key].map((m, index) => (
+                              <label key={m._id} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 0.8rem', background: '#f1f1f1', borderRadius: '4px', marginBottom: '0.3rem', fontSize: '0.95rem', cursor: 'pointer', userSelect: 'none' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedMatchId === m._id}
+                                  onChange={e => onMatchCheckboxChange(t._id, r._id, m._id, e.target.checked)}
+                                  style={{ marginRight: '0.8rem', cursor: 'pointer' }}
+                                />
+                                {m.matchName || `Match ${index + 1}`}
+                              </label>
+                            ))}
+                          </div>
+
+                          {/* Schedule match selection */}
+                          <div>
+                            <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Select Matches for Schedule View:</div>
+                            {matchesMap[key].map((m, index) => (
+                              <label key={`schedule-${m._id}`} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 0.8rem', background: '#e8f4fd', borderRadius: '4px', marginBottom: '0.3rem', fontSize: '0.95rem', cursor: 'pointer', userSelect: 'none' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={(selectedScheduleMatches[key] || []).includes(m._id)}
+                                  onChange={e => onScheduleMatchCheckboxChange(t._id, r._id, m._id, e.target.checked)}
+                                  style={{ marginRight: '0.8rem', cursor: 'pointer' }}
+                                />
+                                {m.matchName || `Match ${index + 1}`}
+                              </label>
+                            ))}
+                          </div>
                         </div>
                       )}
 
@@ -266,8 +319,11 @@ const DisplayHud: React.FC = () => {
                           <div style={{ marginBottom: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
                             Selected match: {selectedMatchId ? (matchesMap[key]?.find((m2: any) => m2._id === selectedMatchId)?.matchName || `Match ${(matchesMap[key]?.find((m2: any) => m2._id === selectedMatchId)?.matchNo || matchesMap[key]?.find((m2: any) => m2._id === selectedMatchId)?._matchNo) || 'N/A'}`) : 'None'}
                           </div>
+                          <div style={{ marginBottom: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
+                            Selected schedule matches: {(selectedScheduleMatches[key] || []).length > 0 ? (selectedScheduleMatches[key] || []).map(matchId => matchesMap[key]?.find((m2: any) => m2._id === matchId)?.matchName || `Match ${(matchesMap[key]?.find((m2: any) => m2._id === matchId)?.matchNo || matchesMap[key]?.find((m2: any) => m2._id === matchId)?._matchNo) || 'N/A'}`).join(', ') : 'None'}
+                          </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                            {['MatchSummary','Lower','Upper','Dom','LiveStats','LiveFrags','Alerts','MatchData','MatchFragrs','CommingUpNext','OverAllData','OverallFrags','Schedule','WwcdStats','WwcdSummary','playerH2H','TeamH2H','Champions','1stRunnerUp','2ndRunnerUp','EventMvp'].map((viewName) => (
+                            {['MatchSummary','Lower','Upper','Dom','LiveStats','LiveFrags','Alerts','MatchData','MatchFragrs','CommingUpNext','OverAllData','OverallFrags','WwcdStats','WwcdSummary','playerH2H','TeamH2H','Champions','1stRunnerUp','2ndRunnerUp','EventMvp'].map((viewName) => (
                               <button
                                 key={viewName}
                                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
@@ -279,6 +335,15 @@ const DisplayHud: React.FC = () => {
                                 {viewName}
                               </button>
                             ))}
+                            <button
+                              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={(selectedScheduleMatches[key] || []).length === 0}
+                              onClick={() =>
+                                openScheduleViewer(t._id, r._id, selectedScheduleMatches[key] || [], getSelectedTheme(t._id))
+                              }
+                            >
+                              Schedule ({(selectedScheduleMatches[key] || []).length})
+                            </button>
                           </div>
                         </div>
                       )}

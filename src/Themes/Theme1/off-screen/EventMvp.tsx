@@ -49,50 +49,56 @@ interface OverallData {
 interface EventMvpProps {
   tournament: Tournament;
   round?: Round | null;
+  overallData?: any;
 }
 
-const EventMvp: React.FC<EventMvpProps> = ({ tournament, round }) => {
+const EventMvp: React.FC<EventMvpProps> = ({ tournament, round, overallData: propOverallData }) => {
   const [overallData, setOverallData] = useState<OverallData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchOverall = async () => {
-      if (!round) return;
-      try {
-        setLoading(true);
-
-        // Initialize empty overall data structure
-        const data: OverallData = {
-          tournamentId: tournament._id,
-          roundId: round._id,
-          userId: '',
-          teams: [],
-          createdAt: new Date().toISOString()
-        };
-
-        // Try to get overall data, but don't fail if it doesn't exist
+    if (propOverallData) {
+      setOverallData(propOverallData);
+      setLoading(false);
+    } else {
+      const fetchOverall = async () => {
+        if (!round) return;
         try {
-          const overallUrl = `/public/tournaments/${tournament._id}/rounds/${round._id}/overall`;
-          const overallResponse = await api.get(overallUrl);
-          Object.assign(data, overallResponse.data);
-        } catch (overallError) {
-          console.log('Overall data not available, using empty data structure');
+          setLoading(true);
+
+          // Initialize empty overall data structure
+          const data: OverallData = {
+            tournamentId: tournament._id,
+            roundId: round._id,
+            userId: '',
+            teams: [],
+            createdAt: new Date().toISOString()
+          };
+
+          // Try to get overall data, but don't fail if it doesn't exist
+          try {
+            const overallUrl = `/public/tournaments/${tournament._id}/rounds/${round._id}/overall`;
+            const overallResponse = await api.get(overallUrl);
+            Object.assign(data, overallResponse.data);
+          } catch (overallError) {
+            console.log('Overall data not available, using empty data structure');
+          }
+
+          setOverallData(data);
+          setError(null);
+        } catch (err) {
+          console.error('Failed to fetch overall data:', err);
+          setError('Failed to load overall data');
+          setOverallData(null);
+        } finally {
+          setLoading(false);
         }
+      };
 
-        setOverallData(data);
-        setError(null);
-      } catch (err) {
-        console.error('Failed to fetch overall data:', err);
-        setError('Failed to load overall data');
-        setOverallData(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (tournament._id && round?._id) fetchOverall();
-  }, [tournament._id, round?._id]);
+      if (tournament._id && round?._id) fetchOverall();
+    }
+  }, [tournament._id, round?._id, propOverallData]);
 
   const mvp = useMemo(() => {
     if (!overallData) return null;
@@ -184,7 +190,7 @@ const EventMvp: React.FC<EventMvpProps> = ({ tournament, round }) => {
           style={{
             background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`,
           }}
-          className="w-full h-[40%] absolute top-[900px] z-10">
+          className="w-full h-[20%] absolute top-[900px] z-10">
 
           <div className='absolute top-[30px] left-[70px]'>
             <div className='bg-white w-[400px] h-[100px] skew-x-[20deg]'>

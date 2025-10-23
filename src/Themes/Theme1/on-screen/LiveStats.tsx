@@ -57,9 +57,10 @@ interface LiveStatsProps {
   round?: Round | null;
   match?: Match | null;
   matchData?: MatchData | null;
+  overallData?: any;
 }
 
-const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchData }) => {
+const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchData, overallData }) => {
   const [localMatchData, setLocalMatchData] = useState<MatchData | null>(matchData || null);
   const [matchDataId, setMatchDataId] = useState<string | null>(matchData?._id?.toString() || null);
   const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
@@ -305,31 +306,23 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
     }
   }, [matchData, matchDataId]);
 
-  // Fetch overall aggregated data for tournament/round up to current match
+  // Use overall data from props
   useEffect(() => {
-    if (!tournament?._id || !round?._id || !match?._id) return;
-    const url = `http://localhost:3000/api/public/tournament/${tournament._id}/round/${round._id}/match/${match._id}/overall`;
-    fetch(url, { credentials: 'include' })
-      .then(res => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
-      .then(data => {
-        const map = new Map<string, any>();
-        if (data && Array.isArray(data.teams)) {
-          for (const t of data.teams) {
-            const key = t.teamId?.toString?.() || t.teamId;
-            if (!key) continue;
-            map.set(key, {
-              placePoints: t.placePoints || 0,
-              players: Array.isArray(t.players) ? t.players : [],
-            });
-          }
-        }
-        setOverallMap(map);
-      })
-      .catch(err => {
-        console.error('Failed to fetch overall data:', err);
-        setOverallMap(new Map());
-      });
-  }, [tournament?._id, round?._id, match?._id]);
+    if (overallData && Array.isArray(overallData.teams)) {
+      const map = new Map<string, any>();
+      for (const t of overallData.teams) {
+        const key = t.teamId?.toString?.() || t.teamId;
+        if (!key) continue;
+        map.set(key, {
+          placePoints: t.placePoints || 0,
+          players: Array.isArray(t.players) ? t.players : [],
+        });
+      }
+      setOverallMap(map);
+    } else {
+      setOverallMap(new Map());
+    }
+  }, [overallData]);
 
   // Sort teams by points first, then by kills - recalculated on every localMatchData change
   const sortedTeams = useMemo(() => {
@@ -516,11 +509,15 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
       </div>
 
      {/* Team Rows */}
-<div className="absolute right-0 top-[250px] bottom-0 w-[400px] ">
+<div className="absolute right-0 top-[250px]  w-[400px] ">
+  
   <div style={{ transform: `scaleY(${scaleY})`, transformOrigin: 'top right' }}>
+    
   {remainingTeams.map((team, index) => (
+    
     <div key={team._id} className="w-full relative flex items-center text-black font-bold border-b-[#000000] border-b-[1px] overflow-visible " style={{ height: `${baseRowHeight}px`, opacity: team.isAllDead ? 0.7 : 1 }}>
       {/* Rank box */}
+      
       <div
         className="absolute w-[40px] flex items-center justify-center text-white text-[1.5rem]"
         style={{
@@ -624,11 +621,27 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
 </div>
 
     </div>
+    
+    
   ))}
+
+  {/* Legend below the last team */}
+  <div className="w-full h-[30px] font-[Righteous] bg-gradient-to-r from-[#FFD700] via-[#FFA500] to-[#FFD700] flex justify-center items-center text-black font-bold">
+    ALIVE <span className='bg-white w-[20px] h-[20px] ml-[5px] border border-black'></span>
+    <div className='flex items-center ml-[20px]'>
+      KNOCK <span className='bg-red-500 w-[20px] h-[20px] ml-[5px] border border-black'></span>
+    </div>
+    <div className='flex items-center ml-[20px]'>
+      DEAD <span className='bg-[#282828] w-[20px] h-[20px] ml-[5px] border border-black'></span>
+    </div>
   </div>
+
+  </div>
+
 </div>
 
     </div>
+    
   );
 };
 

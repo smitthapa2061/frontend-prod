@@ -248,8 +248,8 @@ const Dashboard: React.FC = () => {
       { name: "tournamentName", placeholder: "Tournament Name" },
       { name: "torLogo", placeholder: "Tournament Logo URL" },
       { name: "info", placeholder: "Additional Info" },
-      { name: "primaryColor", placeholder: "Primary Color" },
-      { name: "secondaryColor", placeholder: "Secondary Color" },
+      { name: "primaryColor", placeholder: "hex code of Primary Color(#ffffff)" },
+      { name: "secondaryColor", placeholder: "hex code of Secondary Color(#41hr1R2)" },
       { name: "overlayBg", placeholder: "Overlay Background" },
     ].map((field) => (
       <input

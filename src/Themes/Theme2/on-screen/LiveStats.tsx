@@ -57,6 +57,7 @@ interface LiveStatsProps {
   round?: Round | null;
   match?: Match | null;
   matchData?: MatchData | null;
+  overallData?: any;
 }
 
 const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchData }) => {
@@ -621,6 +622,18 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
 
     </div>
   ))}
+
+  {/* Legend below the last team */}
+  <div className="w-full h-[30px] font-[Righteous] bg-gradient-to-r from-[#FFD700] via-[#FFA500] to-[#FFD700] flex justify-center items-center text-black font-bold">
+    ALIVE <span className='bg-white w-[20px] h-[20px] ml-[5px] border border-black'></span>
+    <div className='flex items-center ml-[20px]'>
+      KNOCK <span className='bg-red-500 w-[20px] h-[20px] ml-[5px] border border-black'></span>
+    </div>
+    <div className='flex items-center ml-[20px]'>
+      DEAD <span className='bg-[#282828] w-[20px] h-[20px] ml-[5px] border border-black'></span>
+    </div>
+  </div>
+
   </div>
 </div>
 

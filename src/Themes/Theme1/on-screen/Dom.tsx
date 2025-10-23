@@ -249,7 +249,7 @@ const handleSocketUpdate = useCallback((data: any) => {
           setIsVisible(false);
           setDisplayedPlayer(null);
           displayTimerRef.current = null;
-        }, 10000);
+        }, 6000);
         console.log(`Dom: Triggering alert for ${alertData.playerName} - ${alertReason}`);
       }
     } else {
