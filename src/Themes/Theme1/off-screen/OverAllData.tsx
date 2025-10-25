@@ -73,7 +73,7 @@ interface OverAllDataProps {
 
 // ... all imports and interfaces remain the same
 
-const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, match, overallData: propOverallData, matches: propMatches, matchDatas: propMatchDatas }) => {
+const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, match, matchData, overallData: propOverallData, matches: propMatches, matchDatas: propMatchDatas }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [previousTotals, setPreviousTotals] = useState<Map<string, number>>(new Map());
@@ -87,11 +87,23 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, m
     if (overallData) {
       // Calculate matches played for each team
       const teamMatchesPlayed = new Map<string, number>();
-      matchDatas.forEach((matchData) => {
+      // Always count the selected match
+      if (matchData) {
         matchData.teams.forEach((team: any) => {
           const teamId = team.teamId;
           teamMatchesPlayed.set(teamId, (teamMatchesPlayed.get(teamId) || 0) + 1);
         });
+      }
+      // Count other matches only if they have at least one team with placePoints === 10
+      matchDatas.forEach((matchDataItem) => {
+        if (matchData && matchDataItem._id === matchData._id) return; // Skip if it's the selected match
+        const has10 = matchDataItem.teams.some((team: any) => team.placePoints === 10);
+        if (has10) {
+          matchDataItem.teams.forEach((team: any) => {
+            const teamId = team.teamId;
+            teamMatchesPlayed.set(teamId, (teamMatchesPlayed.get(teamId) || 0) + 1);
+          });
+        }
       });
 
       // Update totals and calculate additional fields
