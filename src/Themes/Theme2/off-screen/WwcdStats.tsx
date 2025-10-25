@@ -305,7 +305,7 @@ const WwcdStats: React.FC<WwcdSummaryProps> = ({ tournament, round, match, match
         <div className="flex items-center justify-between ">
           <div className="flex items-center space-x-4">
             <div>
-              <h1 className="text-white font-bold whitespace-pre text-[8rem]">WWCD TEAM STATS</h1>
+              <h1 className="text-white font-bold whitespace-pre text-[8rem]">BOOYAH TEAM STATS</h1>
               {round && match && (
                 <motion.p
                   className="text-gray-300 text-[2rem] font-[Righteous] whitespace-pre p-[10px] mt-[-30px]"

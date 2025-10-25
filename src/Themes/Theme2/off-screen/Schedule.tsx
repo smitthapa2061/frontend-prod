@@ -55,7 +55,7 @@ const getMapImage = (mapName?: string) => {
     case "rondo":
       return "https://res.cloudinary.com/dqckienxj/image/upload/v1759656543/rondo_huj3bl.png";
    case "bermuda":
-    return "https://res.cloudinary.com/dqckienxj/image/upload/v1761360885/bermuda_axt2w0.jpg"
+    return "https://res.cloudinary.com/dqckienxj/image/upload/v1761378444/brenuda_nr2qop.jpg"
      case "alpine":
     return "https://res.cloudinary.com/dqckienxj/image/upload/v1761361515/alpine_wfchbf.jpg"
      case "nexterra":

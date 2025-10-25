@@ -172,7 +172,7 @@ const CommingUpNext: React.FC<CommingUpNextProps> = ({ tournament, round, match 
       case "rondo":
         return <img src="https://res.cloudinary.com/dqckienxj/image/upload/v1759656543/rondo_huj3bl.png" alt="Rondo" className="h-full object-contain" />;
       case "bermuda":
-        return <img src="https://res.cloudinary.com/dqckienxj/image/upload/v1761360885/bermuda_axt2w0.jpg" alt="Bermuda" className="h-full object-contain" />;
+        return <img src="https://res.cloudinary.com/dqckienxj/image/upload/v1761378444/brenuda_nr2qop.jpg" alt="Bermuda" className="h-full object-contain" />;
       case "alpine":
         return <img src="https://res.cloudinary.com/dqckienxj/image/upload/v1761361515/alpine_wfchbf.jpg" alt="Alpine" className="h-full object-contain" />;
       case "nexterra":

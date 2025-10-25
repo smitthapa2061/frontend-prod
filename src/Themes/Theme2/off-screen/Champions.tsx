@@ -162,7 +162,7 @@ className='bg-white w-[700px] h-[120px] skew-x-[20deg]'>
 background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`,
 
 
-}} className="w-full h-[40%] absolute top-[900px] z-10" >
+}} className="w-full h-[20%] absolute top-[900px] z-10" >
 
 
 <div className='absolute top-[30px] left-[70px]'>
@@ -171,11 +171,9 @@ background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tou
 </div>
 
 </div>
-<div className='font-bebas font-[300] text-[3rem] absolute top-[20px] left-[30px]' >WWCD</div>
+<div className='font-bebas font-[300] text-[3rem] absolute top-[20px] left-[30px]' >BOOYAH</div>
 <div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[200px] text-black ' > 
-    <div className='flex items-center'>
-    
-    <img src="/chicken.png" alt="" className='w-[70px] h-[70px] mr-[10px] mb-[10px]'/> x {champion.wwcd || 0}</div>
+  
     </div>
 </div>
 <div className='absolute top-[30px] left-[530px]'>
@@ -210,10 +208,10 @@ background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tou
 
 </div>
 </div>
-  {champion.players.map((p) => (
+  {champion.players.slice(0, 4).map((p) => (
     <div key={p._id} className="flex flex-col items-center m-[-150px] relative top-[300px]">
-    <div 
-  
+    <div
+
     className='w-full absolute h-full top-[0px] '></div>
       <img
         src={
