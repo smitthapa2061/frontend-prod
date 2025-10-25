@@ -31,7 +31,7 @@ const DisplayHud: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [pollingKey, setPollingKey] = useState(0); // Force re-render polling component
   // Theme selection per tournament
-  const availableThemes = ['Theme1', 'Theme2'];
+  const availableThemes = ['Theme1', 'Theme2-(freefire)'];
   const [selectedThemeMap, setSelectedThemeMap] = useState<Record<string, string>>(() => {
     try {
       const saved = localStorage.getItem('selectedThemeMap');
@@ -323,7 +323,7 @@ const DisplayHud: React.FC = () => {
                             Selected schedule matches: {(selectedScheduleMatches[key] || []).length > 0 ? (selectedScheduleMatches[key] || []).map(matchId => matchesMap[key]?.find((m2: any) => m2._id === matchId)?.matchName || `Match ${(matchesMap[key]?.find((m2: any) => m2._id === matchId)?.matchNo || matchesMap[key]?.find((m2: any) => m2._id === matchId)?._matchNo) || 'N/A'}`).join(', ') : 'None'}
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                            {['MatchSummary','Lower','Upper','Dom','LiveStats','LiveFrags','Alerts','MatchData','MatchFragrs','CommingUpNext','OverAllData','OverallFrags','WwcdStats','WwcdSummary','playerH2H','TeamH2H','Champions','1stRunnerUp','2ndRunnerUp','EventMvp'].map((viewName) => (
+                            {['MatchSummary','Lower','Upper','Dom','LiveStats','LiveFrags','Alerts','MatchData','MatchFragrs','CommingUpNext','OverAllData','OverallFrags','WwcdStats','WwcdSummary','playerH2H','TeamH2H','Champions','1stRunnerUp','2ndRunnerUp','EventMvp','ZoneClose'].map((viewName) => (
                               <button
                                 key={viewName}
                                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"

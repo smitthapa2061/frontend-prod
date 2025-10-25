@@ -261,6 +261,11 @@ const Match: React.FC = () => {
             <option value="Miramar">Miramar</option>
             <option value="Sanhok">Sanhok</option>
             <option value="Rondo">Rondo</option>
+             <option value="Bermuda">Bermuda</option>
+                           <option value="Alpine">Alpine</option>
+                              <option value="Nexterra">nexterra</option>
+                                     <option value="Purgatory">Purgatory</option>
+                                       <option value="Kalahari">Kalahari</option>
           </select>
 
           <div className="mb-4">
@@ -334,6 +339,11 @@ const Match: React.FC = () => {
                     <option value="Miramar">Miramar</option>
                     <option value="Sanhok">Sanhok</option>
                      <option value="Rondo">Rondo</option>
+                       <option value="Bermuda">Bermuda</option>
+                           <option value="Alpine">Alpine</option>
+                              <option value="Nexterra">nexterra</option>
+                                     <option value="Purgatory">Purgatory</option>
+                                       <option value="Kalahari">Kalahari</option>
                   </select>
                   <div className="flex space-x-2 mt-2 md:mt-0">
                     <button

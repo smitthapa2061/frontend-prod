@@ -117,10 +117,12 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, m
         const prevTotal = previousTotals.get(team.teamId) || 0;
         team.pointsChange = team.total - prevTotal;
 
-        // leadOverNext only for rank 1
-        if (team.rank === 1 && updatedTeams.length > 1) {
-          const secondTeam = updatedTeams[1];
-          team.leadOverNext = team.total - secondTeam.total;
+        // leadOverNext for all teams: difference to next rank
+        if (index < updatedTeams.length - 1) {
+          const nextTeam = updatedTeams[index + 1];
+          team.leadOverNext = team.total - nextTeam.total;
+        } else {
+          team.leadOverNext = 0; // last place has no next
         }
 
         newTotals.set(team.teamId, team.total);
@@ -243,7 +245,7 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, m
   }}>
                 {team.rank === 1
                   ? `${team.leadOverNext || 0}`
-                  : team.pointsChange! > 0 ? `${team.pointsChange}` : team.pointsChange! < 0 ? team.pointsChange : '0'}
+                  : `${team.leadOverNext || 0}`}
               </span>
             </div>
           </motion.div>

@@ -409,13 +409,7 @@ const LiveFrags: React.FC<LiveFragsProps> = ({ tournament, round, match, matchDa
                   <div className="text-white text-[1.5rem]  font-bold font-[Righteous]">{player.playerName}</div>
                   <div className="text-white text-[1rem] font-[Righteous] font-bold">{player.teamTag}</div>
 
-                  {/* Health Bar */}
-                  <div className="w-[150px] bg-gray-700 rounded-full h-4 mt-2">
-                    <div
-                      className={`h-4 rounded-full transition-all duration-500 ${barColor}`}
-                      style={{ width: `${isDead ? 0 : isKnocked ? 100 : healthPercentage}%` }}
-                    />
-                  </div>
+                
 
                   
                 </div>
@@ -426,10 +420,10 @@ const LiveFrags: React.FC<LiveFragsProps> = ({ tournament, round, match, matchDa
                 {/* Kills/Damage Toggle */}
                 <div className='flex text-white text-2xl font-bold mr-4 flex-col font-[Righteous]'>
                   <div className='absolute left-[1860px] text-yellow-400 '>
-                    {showKills ? player.killNum : player.damage}
+                    {player.killNum}
                   </div>
                   <div className='relative top-[25px]'>
-                    {showKills ? 'KILLS' : 'DAMAGE'}
+                    {'KILLS'}
                   </div>
                 </div>
               </div>

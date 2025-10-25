@@ -349,20 +349,15 @@ const WwcdStats: React.FC<WwcdSummaryProps> = ({ tournament, round, match, match
              className='w-full h-[25%] bg-gradient-to-r from-[#FFD700] via-[#FFA500] to-[#FFD700] flex items-center justify-center'>
 <span className='text-[2.5rem] font-bold font-[Righteous] '>{player.playerName}</span>
             </div>
-            <div className="w-full font-bebas grid grid-cols-2 items-center h-[88px] text-white border-b-[2px] border-white">
-  <span className="text-[4rem] ml-[20px]">DAMAGE</span>
-  <span className="text-[4rem] text-center">{player.damage}</span>
+   
+
+<div className="w-full text-white font-bebas items-center h-[88px] ">
+
+  <div   style={{color:tournament.primaryColor}}
+   className="text-[9rem] text-center  mb-[-40px]">{player.killNum}</div>
+    <div className="text-[4rem] ml-[0px] text-center border-t-[2px] border-white ">ELIMINATION</div>
 </div>
 
-<div className="w-full text-white font-bebas grid grid-cols-2 items-center h-[88px] border-b-[2px] border-white">
-  <span className="text-[4rem] ml-[20px]">KILLS</span>
-  <span className="text-[4rem] text-center">{player.killNum}</span>
-</div>
-
-<div className="w-full text-white font-bebas grid grid-cols-2 items-center h-[88px] border-b-[2px] border-white">
-  <span className="text-[4rem] ml-[20px]">ASSISTS</span>
-  <span className="text-[4rem] text-center">{player.assists}</span>
-</div>
 
           </div>
       <img
@@ -396,24 +391,22 @@ const WwcdStats: React.FC<WwcdSummaryProps> = ({ tournament, round, match, match
              className='w-full h-[25%] bg-gradient-to-r from-[#FFD700] via-[#FFA500] to-[#FFD700] flex items-center justify-center'>
 <span className='text-[2.5rem] font-bold font-[Righteous] '>{player.playerName}</span>
             </div>
-            <div className="w-full font-bebas grid grid-cols-2 items-center h-[88px] text-white border-b-[2px] border-white">
-  <span className="text-[4rem] ml-[20px]">DAMAGE</span>
-  <span className="text-[4rem] text-center">{player.damage}</span>
+      
+
+<div className="w-full text-white font-bebas items-center h-[88px] ">
+   <div 
+   
+   style={{color:tournament.primaryColor}}
+   className="text-[9rem] text-center  mb-[-40px]">{player.killNum}</div>
+  <div className="text-[4rem] ml-[0px] text-center border-t-[2px] border-white ">ELIMINATION</div>
+ 
 </div>
 
-<div className="w-full text-white font-bebas grid grid-cols-2 items-center h-[88px] border-b-[2px] border-white">
-  <span className="text-[4rem] ml-[20px]">KILLS</span>
-  <span className="text-[4rem] text-center">{player.killNum}</span>
-</div>
 
-<div className="w-full text-white font-bebas grid grid-cols-2 items-center h-[88px] border-b-[2px] border-white">
-  <span className="text-[4rem] ml-[20px]">ASSISTS</span>
-  <span className="text-[4rem] text-center">{player.assists}</span>
-</div>
           </div>
        <img
          key={player._id || idx}
-         src={player.picUrl}
+         src={player.picUrl || "https://res.cloudinary.com/dqckienxj/image/upload/v1761358753/defplayer_m7qexs.png"}
          alt={player.playerName}
       className="w-[300px] h-[350px] object-cover "
        />

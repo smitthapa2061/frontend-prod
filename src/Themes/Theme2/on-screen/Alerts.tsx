@@ -496,7 +496,7 @@ const Alerts: React.FC<AlertsProps> = ({ tournament, round, match, matchData }) 
         <motion.rect x="612" y="374" height="39" fill="url(#paint0_linear_39_2)" initial={{ width: 0 }} animate={{ width: 695 }} exit={{ width: 0 }} transition={{ duration: 0 }} />
         {alertTeam && (
           <text
-            x="720"
+            x="800"
             y="395"
             textAnchor="start"
             dominantBaseline="middle"
@@ -507,8 +507,7 @@ const Alerts: React.FC<AlertsProps> = ({ tournament, round, match, matchData }) 
           >
             <tspan>Team :</tspan>
             <tspan dx="15">{alertTeam.teamTag}</tspan>
-            <tspan dx="30">Rank :</tspan>
-            <tspan dx="10">{alertTeam.teamRank || 0}</tspan>
+           
             <tspan dx="30">Kills :</tspan>
             <tspan dx="10">{alertTeam.totalKills}</tspan>
             <tspan dx="30">Points:</tspan>

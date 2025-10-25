@@ -222,7 +222,7 @@ const WwcdSummary: React.FC<WwcdSummaryProps> = ({ tournament, round, match, mat
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
       >
-        <h1 className="text-white font-bold whitespace-pre text-[8rem]">WWCD SUMMARY</h1>
+        <h1 className="text-white font-bold whitespace-pre text-[8rem]">BOOYAH SUMMARY</h1>
         {round && match && (
           <motion.p
             className="text-gray-300 text-[2rem] font-[Righteous] whitespace-pre p-[10px] mt-[-30px] w-[670px]"
@@ -270,7 +270,7 @@ const WwcdSummary: React.FC<WwcdSummaryProps> = ({ tournament, round, match, mat
                   />
 
                   {/* Team info */}
-                  <div className="w-[400px] h-[100px] absolute top-[500px] left-[760px] flex">
+                  <div className="w-[400px] h-[100px] absolute top-[620px] left-[560px] flex">
                     <div className="w-[350px] h-full bg-white">
                       <img src={team.teamLogo} alt="" className="w-full h-full" />
                     </div>
@@ -280,26 +280,8 @@ const WwcdSummary: React.FC<WwcdSummaryProps> = ({ tournament, round, match, mat
                     >
                       {team.teamTag}
                     </div>
-                    <div className=' w-full bg-white h-full absolute top-[150px] right-[700px]'>
-                    <div className='w-[150px] h-full text-[2rem] absolute  flex justify-center items-center'  style={{ background: `linear-gradient(45deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})` }}>
-
-<span className='text-[3rem] absolute top-[20px]  font-bebas text-white flex justify-center items-center'>KNOCKS</span>
-
-</div>
- <span className='text-[5rem] absolute top-[-5px]  font-bebas text-black flex justify-center items-center left-[200px]'> {totalAssists}</span>
-</div>
-<div 
- 
-className=' w-[400px] bg-white h-full absolute top-[150px] right-[250px] flex '>
-  <div className='w-[150px] h-full text-[5rem] absolute  flex justify-center items-center'  style={{ background: `linear-gradient(45deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})` }}>
-
-  <span className='text-[3rem] absolute top-[20px]  font-bebas text-white flex justify-center items-center'> DAMAGE</span>
-
-  </div>
-   <span className='text-[5rem] absolute top-[-5px]  font-bebas text-black flex justify-center items-center left-[200px]'> {totalDamage}</span>
-<div className='bg-white w-full '></div>
-</div>
-<div className=' w-full bg-white h-full absolute top-[150px] left-[200px]'>
+                    
+<div className=' w-full bg-white h-full absolute top-[0px] left-[450px]'>
 <div className='w-[150px] h-full text-[2rem] absolute  flex justify-center items-center'  style={{ background: `linear-gradient(45deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})` }}>
 
 <span className='text-[4rem] absolute top-[10px]  font-bebas text-white flex justify-center items-center'> KILLS</span>
@@ -309,16 +291,7 @@ className=' w-[400px] bg-white h-full absolute top-[150px] right-[250px] flex '>
 
 
 </div>
-<div className=' w-full bg-white h-full absolute top-[150px] left-[650px]'>
-<div className='w-[150px] h-full text-[2rem] absolute  flex justify-center items-center'  style={{ background: `linear-gradient(45deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})` }}>
 
-<span className='text-[3rem] absolute top-[20px]  font-bebas text-white flex justify-center items-center'> ASSISTS</span>
-
-</div>
- <span className='text-[5rem] absolute top-[0px]  font-bebas text-black flex justify-center items-center left-[180px]'> {totalAssists}</span>
-
-
-</div>
 
 
         

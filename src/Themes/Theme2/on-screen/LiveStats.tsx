@@ -308,7 +308,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
 
   // Fetch overall aggregated data for tournament/round
   useEffect(() => {
-    if (!tournament?._id || !round?._id) return;
+    if (!tournament?._id || !round?._id || match?.matchNo === 1) return;
     const url = `https://backend-prod-530t.onrender.com/api/public/tournaments/${tournament._id}/rounds/${round._id}/overall`;
     fetch(url, { credentials: 'include' })
       .then(res => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
@@ -330,7 +330,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
         console.error('Failed to fetch overall data:', err);
         setOverallMap(new Map());
       });
-  }, [tournament?._id, round?._id]);
+  }, [tournament?._id, round?._id, match?.matchNo]);
 
   // Sort teams by points first, then by kills - recalculated on every localMatchData change
   const sortedTeams = useMemo(() => {
@@ -346,7 +346,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
         const overallKills = overall && Array.isArray(overall.players)
           ? overall.players.reduce((s: number, p: any) => s + (p.killNum || 0), 0)
           : 0;
-        const totalPoints = (overall?.placePoints || 0) + liveKills + overallKills;
+        const totalPoints = (match?.matchNo === 1 ? 0 : (overall?.placePoints || 0)) + (team.placePoints || 0) + liveKills + (match?.matchNo === 1 ? 0 : overallKills);
         const isAllDead = team.players.every(player => player.liveState === 5 || player.bHasDied);
 
         return {
@@ -370,6 +370,14 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
     return (
       <svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
         <text x="1600" y="350" fontFamily="Arial" fontSize="24" fill="white">No match data</text>
+      </svg>
+    );
+  }
+
+  if (!localMatchData.teams || localMatchData.teams.length === 0) {
+    return (
+      <svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <text x="1600" y="350" fontFamily="Arial" fontSize="24" fill="white">WRITE MISS</text>
       </svg>
     );
   }
@@ -441,56 +449,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
       {/* Team Tag */}
       <div className=' relative left-[30px] flex-1 text-white'>{topTeam.teamTag}</div>
       
-      {/* Health bars */}
-      <div className="flex gap-[2px] w-[40px] items-center justify-center relative left-[-10px]">
-        {topTeam.players.map((player: Player) => {
-          const isDead = player.liveState === 5 || player.bHasDied;
-          const isAlive = [0, 1, 2, 3].includes(player.liveState);
-          const isKnocked = player.liveState === 4;
-          const useApiHealth = round?.apiEnable === true;
-
-          let barHeight = 0;
-          let barColor = "";
-
-          if (useApiHealth) {
-            // API enabled - use full health system
-            if (isDead) {
-              barHeight = 0;
-              barColor = "";
-            } else if (isKnocked) {
-              const healthRatio = Math.max(0, Math.min(1, player.health / (player.healthMax || 100)));
-              barHeight = healthRatio * 30;
-              barColor = "bg-red-500";
-            } else if (isAlive) {
-              const healthRatio = Math.max(0, Math.min(1, player.health / (player.healthMax || 100)));
-              barHeight = healthRatio * 30;
-              barColor = "bg-white";
-            }
-          } else {
-            // API disabled - use simple bHasDied system
-            if (isDead) {
-              barHeight = 0;
-              barColor = "";
-            } else if (isKnocked) {
-              barHeight = 30;
-              barColor = "bg-red-500";
-            } else if (isAlive) {
-              barHeight = 30;
-              barColor = "bg-white";
-            }
-          }
-
-          return (
-            <div key={player._id} className="relative w-[8px] h-[30px] bg-gray-600">
-              <div
-                className={`absolute bottom-0 w-full transition-all duration-300 ${barColor}`}
-                style={{ height: `${barHeight}px` }}
-              />
-            </div>
-          );
-        })}
-      </div>
-      
+   
       {/* Points */}
       <div className='text-white relative left-[-2px] w-[40px] text-center'>{(topTeam as any).totalPoints}</div>
       
@@ -552,59 +511,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
     background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`
   }}
 >
-  {/* Health Bars */}
-  <div className="flex gap-[2px] w-[50px] items-center justify-center relative left-[10px] mt-[4px]" style={{ height: `${baseHealthBar}px` }}>
-    {team.players.map((player: Player) => {
-    const isDead = player.liveState === 5 || player.bHasDied;
-    const isAlive = [0, 1, 2, 3].includes(player.liveState);
-    const isKnocked = player.liveState === 4;
-    const useApiHealth = round?.apiEnable === true;
-
-    let barHeight = 0;
-    let barColor = "";
-
-    if (useApiHealth) {
-      // API enabled - use full health system
-      if (isDead) {
-        barHeight = 0;
-        barColor = "";
-      } else if (isKnocked) {
-        const healthRatio = Math.max(0, Math.min(1, player.health / (player.healthMax || 100)));
-        barHeight = healthRatio * baseHealthBar;
-        barColor = "bg-red-500";
-      } else if (isAlive) {
-        const healthRatio = Math.max(0, Math.min(1, player.health / (player.healthMax || 100)));
-        barHeight = healthRatio * baseHealthBar;
-        barColor = "bg-white";
-      }
-    } else {
-      // API disabled - use simple bHasDied system
-      if (isDead) {
-        barHeight = 0;
-        barColor = "";
-      } else if (isKnocked) {
-        barHeight = baseHealthBar;
-        barColor = "bg-red-500";
-      } else if (isAlive) {
-        barHeight = baseHealthBar;
-        barColor = "bg-white";
-      }
-    }
-
-    return (
-      <div key={player._id} className="relative w-[10px] bg-gray-600" style={{ height: `${baseHealthBar}px` }}>
-        {/* Health bar */}
-        <div
-          className={`absolute bottom-0 w-full transition-all duration-300 ${barColor}`}
-          style={{
-            height: `${barHeight}px`
-          }}
-        />
-      </div>
-    );
-  })}
-</div>
-
+ 
 
 
 
@@ -625,13 +532,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
 
   {/* Legend below the last team */}
   <div className="w-full h-[30px] font-[Righteous] bg-gradient-to-r from-[#FFD700] via-[#FFA500] to-[#FFD700] flex justify-center items-center text-black font-bold">
-    ALIVE <span className='bg-white w-[20px] h-[20px] ml-[5px] border border-black'></span>
-    <div className='flex items-center ml-[20px]'>
-      KNOCK <span className='bg-red-500 w-[20px] h-[20px] ml-[5px] border border-black'></span>
-    </div>
-    <div className='flex items-center ml-[20px]'>
-      DEAD <span className='bg-[#282828] w-[20px] h-[20px] ml-[5px] border border-black'></span>
-    </div>
+  {tournament.tournamentName}
   </div>
 
   </div>

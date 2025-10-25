@@ -24,6 +24,7 @@ import EventMvp from '../Themes/Theme1/off-screen/EventMvp.tsx'
 import MatchSummary from '../Themes/Theme1/off-screen/MatchSummary.tsx'
 import PlayerH2H from '../Themes/Theme1/off-screen/playerh2h.tsx'
 import TeamH2H from '../Themes/Theme1/off-screen/teamh2h.tsx'
+import ZoneClose from '../Themes/Theme1/on-screen/zoneClose.tsx'
 
 // Theme2 imports
 import Lower2 from '../Themes/Theme2/on-screen/Lower.tsx';
@@ -47,6 +48,7 @@ import EventMvp2 from '../Themes/Theme2/off-screen/EventMvp.tsx'
 import MatchSummary2 from '../Themes/Theme2/off-screen/MatchSummary.tsx'
 import PlayerH2H2 from '../Themes/Theme2/off-screen/playerh2h.tsx'
 import TeamH2H2 from '../Themes/Theme2/off-screen/teamh2h.tsx'
+import ZoneClose2 from '../Themes/Theme2/on-screen/zoneClose.tsx'
 
 
 interface Tournament {
@@ -132,6 +134,7 @@ const PublicThemeRenderer: React.FC = () => {
   const MatchSummaryComp = isTheme1 ? MatchSummary : MatchSummary2;
   const PlayerH2HComp = isTheme1 ? PlayerH2H : PlayerH2H2;
   const TeamH2HComp = isTheme1 ? TeamH2H : TeamH2H2;
+  const ZoneCloseComp = isTheme1 ? ZoneClose : ZoneClose2;
 
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [round, setRound] = useState<Round | null>(null);
@@ -350,6 +353,8 @@ const PublicThemeRenderer: React.FC = () => {
           return <PlayerH2HComp tournament={tournament} round={round} match={match} />
         case 'TeamH2H':
           return <TeamH2HComp tournament={tournament} round={round} match={match} />
+        case 'ZoneClose':
+          return <ZoneCloseComp tournament={tournament} round={round} match={match} />
       default:
         return (
           <div style={{

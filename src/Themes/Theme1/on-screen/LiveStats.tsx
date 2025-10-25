@@ -308,7 +308,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
 
   // Use overall data from props
   useEffect(() => {
-    if (overallData && Array.isArray(overallData.teams)) {
+    if (overallData && Array.isArray(overallData.teams) && match?.matchNo !== 1) {
       const map = new Map<string, any>();
       for (const t of overallData.teams) {
         const key = t.teamId?.toString?.() || t.teamId;
@@ -322,7 +322,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
     } else {
       setOverallMap(new Map());
     }
-  }, [overallData]);
+  }, [overallData, match?.matchNo]);
 
   // Sort teams by points first, then by kills - recalculated on every localMatchData change
   const sortedTeams = useMemo(() => {
@@ -338,7 +338,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
         const overallKills = overall && Array.isArray(overall.players)
           ? overall.players.reduce((s: number, p: any) => s + (p.killNum || 0), 0)
           : 0;
-        const totalPoints = (overall?.placePoints || 0) + (team.placePoints || 0) + liveKills + overallKills;
+        const totalPoints = (match?.matchNo === 1 ? 0 : (overall?.placePoints || 0)) + (team.placePoints || 0) + liveKills + (match?.matchNo === 1 ? 0 : overallKills);
         const isAllDead = team.players.every(player => player.liveState === 5 || player.bHasDied);
 
         return {
@@ -365,6 +365,8 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
       </svg>
     );
   }
+
+
 
   const topTeam = sortedTeams[0];
   const remainingTeams = sortedTeams.slice(1);
@@ -439,52 +441,56 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
       
       {/* Health bars */}
       <div className="flex gap-[2px] w-[40px] items-center justify-center relative left-[-10px]">
-        {topTeam.players.map((player: Player) => {
-          const isDead = player.liveState === 5 || player.bHasDied;
-          const isAlive = [0, 1, 2, 3].includes(player.liveState);
-          const isKnocked = player.liveState === 4;
-          const useApiHealth = round?.apiEnable === true;
+        {topTeam.players.length === 0 ? (
+          <div className="text-white text-[100px] font-bold">MISS</div>
+        ) : (
+          topTeam.players.map((player: Player) => {
+            const isDead = player.liveState === 5 || player.bHasDied;
+            const isAlive = [0, 1, 2, 3].includes(player.liveState);
+            const isKnocked = player.liveState === 4;
+            const useApiHealth = round?.apiEnable === true;
 
-          let barHeight = 0;
-          let barColor = "";
+            let barHeight = 0;
+            let barColor = "";
 
-          if (useApiHealth) {
-            // API enabled - use full health system
-            if (isDead) {
-              barHeight = 0;
-              barColor = "";
-            } else if (isKnocked) {
-              const healthRatio = Math.max(0, Math.min(1, player.health / (player.healthMax || 100)));
-              barHeight = healthRatio * 30;
-              barColor = "bg-red-500";
-            } else if (isAlive) {
-              const healthRatio = Math.max(0, Math.min(1, player.health / (player.healthMax || 100)));
-              barHeight = healthRatio * 30;
-              barColor = "bg-white";
+            if (useApiHealth) {
+              // API enabled - use full health system
+              if (isDead) {
+                barHeight = 0;
+                barColor = "";
+              } else if (isKnocked) {
+                const healthRatio = Math.max(0, Math.min(1, player.health / (player.healthMax || 100)));
+                barHeight = healthRatio * 30;
+                barColor = "bg-red-500";
+              } else if (isAlive) {
+                const healthRatio = Math.max(0, Math.min(1, player.health / (player.healthMax || 100)));
+                barHeight = healthRatio * 30;
+                barColor = "bg-white";
+              }
+            } else {
+              // API disabled - use simple bHasDied system
+              if (isDead) {
+                barHeight = 0;
+                barColor = "";
+              } else if (isKnocked) {
+                barHeight = 30;
+                barColor = "bg-red-500";
+              } else if (isAlive) {
+                barHeight = 30;
+                barColor = "bg-white";
+              }
             }
-          } else {
-            // API disabled - use simple bHasDied system
-            if (isDead) {
-              barHeight = 0;
-              barColor = "";
-            } else if (isKnocked) {
-              barHeight = 30;
-              barColor = "bg-red-500";
-            } else if (isAlive) {
-              barHeight = 30;
-              barColor = "bg-white";
-            }
-          }
 
-          return (
-            <div key={player._id} className="relative w-[8px] h-[30px] bg-gray-600">
-              <div
-                className={`absolute bottom-0 w-full transition-all duration-300 ${barColor}`}
-                style={{ height: `${barHeight}px` }}
-              />
-            </div>
-          );
-        })}
+            return (
+              <div key={player._id} className="relative w-[8px] h-[30px] bg-gray-600">
+                <div
+                  className={`absolute bottom-0 w-full transition-all duration-300 ${barColor}`}
+                  style={{ height: `${barHeight}px` }}
+                />
+              </div>
+            );
+          })
+        )}
       </div>
       
       {/* Points */}
@@ -554,56 +560,60 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
 >
   {/* Health Bars */}
   <div className="flex gap-[2px] w-[50px] items-center justify-center relative left-[10px] mt-[4px]" style={{ height: `${baseHealthBar}px` }}>
-    {team.players.map((player: Player) => {
-    const isDead = player.liveState === 5 || player.bHasDied;
-    const isAlive = [0, 1, 2, 3].includes(player.liveState);
-    const isKnocked = player.liveState === 4;
-    const useApiHealth = round?.apiEnable === true;
+    {team.players.length === 0 ? (
+      <div className="text-white text-[20px] font-bold">MISS</div>
+    ) : (
+      team.players.map((player: Player) => {
+        const isDead = player.liveState === 5 || player.bHasDied;
+        const isAlive = [0, 1, 2, 3].includes(player.liveState);
+        const isKnocked = player.liveState === 4;
+        const useApiHealth = round?.apiEnable === true;
 
-    let barHeight = 0;
-    let barColor = "";
+        let barHeight = 0;
+        let barColor = "";
 
-    if (useApiHealth) {
-      // API enabled - use full health system
-      if (isDead) {
-        barHeight = 0;
-        barColor = "";
-      } else if (isKnocked) {
-        const healthRatio = Math.max(0, Math.min(1, player.health / (player.healthMax || 100)));
-        barHeight = healthRatio * baseHealthBar;
-        barColor = "bg-red-500";
-      } else if (isAlive) {
-        const healthRatio = Math.max(0, Math.min(1, player.health / (player.healthMax || 100)));
-        barHeight = healthRatio * baseHealthBar;
-        barColor = "bg-white";
-      }
-    } else {
-      // API disabled - use simple bHasDied system
-      if (isDead) {
-        barHeight = 0;
-        barColor = "";
-      } else if (isKnocked) {
-        barHeight = baseHealthBar;
-        barColor = "bg-red-500";
-      } else if (isAlive) {
-        barHeight = baseHealthBar;
-        barColor = "bg-white";
-      }
-    }
+        if (useApiHealth) {
+          // API enabled - use full health system
+          if (isDead) {
+            barHeight = 0;
+            barColor = "";
+          } else if (isKnocked) {
+            const healthRatio = Math.max(0, Math.min(1, player.health / (player.healthMax || 100)));
+            barHeight = healthRatio * baseHealthBar;
+            barColor = "bg-red-500";
+          } else if (isAlive) {
+            const healthRatio = Math.max(0, Math.min(1, player.health / (player.healthMax || 100)));
+            barHeight = healthRatio * baseHealthBar;
+            barColor = "bg-white";
+          }
+        } else {
+          // API disabled - use simple bHasDied system
+          if (isDead) {
+            barHeight = 0;
+            barColor = "";
+          } else if (isKnocked) {
+            barHeight = baseHealthBar;
+            barColor = "bg-red-500";
+          } else if (isAlive) {
+            barHeight = baseHealthBar;
+            barColor = "bg-white";
+          }
+        }
 
-    return (
-      <div key={player._id} className="relative w-[10px] bg-gray-600" style={{ height: `${baseHealthBar}px` }}>
-        {/* Health bar */}
-        <div
-          className={`absolute bottom-0 w-full transition-all duration-300 ${barColor}`}
-          style={{
-            height: `${barHeight}px`
-          }}
-        />
-      </div>
-    );
-  })}
-</div>
+        return (
+          <div key={player._id} className="relative w-[10px] bg-gray-600" style={{ height: `${baseHealthBar}px` }}>
+            {/* Health bar */}
+            <div
+              className={`absolute bottom-0 w-full transition-all duration-300 ${barColor}`}
+              style={{
+                height: `${barHeight}px`
+              }}
+            />
+          </div>
+        );
+      })
+    )}
+  </div>
 
 
 

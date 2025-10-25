@@ -54,6 +54,16 @@ const getMapImage = (mapName?: string) => {
       return "https://res.cloudinary.com/dqckienxj/image/upload/v1759656543/sanhok_kojxj7.png";
     case "rondo":
       return "https://res.cloudinary.com/dqckienxj/image/upload/v1759656543/rondo_huj3bl.png";
+   case "bermuda":
+    return "https://res.cloudinary.com/dqckienxj/image/upload/v1761360885/bermuda_axt2w0.jpg"
+     case "alpine":
+    return "https://res.cloudinary.com/dqckienxj/image/upload/v1761361515/alpine_wfchbf.jpg"
+     case "nexterra":
+    return "https://res.cloudinary.com/dqckienxj/image/upload/v1761361420/nexterra_v0ivox.jpg"
+     case "purgatory":
+    return "https://res.cloudinary.com/dqckienxj/image/upload/v1761361420/purgatory1_frijhy.jpg"
+     case "kalahari":
+    return "https://res.cloudinary.com/dqckienxj/image/upload/v1761361420/kalahari_jrhc4o.jpg"
     default:
       return null;
   }
@@ -247,7 +257,7 @@ const Schedule: React.FC<ScheduleProps> = ({ tournament, round }) => {
 
                   let displayText = m.time || '-';
                   if (hasWinner) {
-                    displayText = `WWCD | ${winningTeams[0].teamTag}`;
+                    displayText = `BOOYAH | ${winningTeams[0].teamTag}`;
                   } else if (isUpNext) {
                     displayText = 'UP NEXT';
                   }
