@@ -21,6 +21,7 @@ interface Round {
 
 interface Player {
   _id: string;
+  uId: string;
   playerName: string;
   killNum: number;
   bHasDied: boolean;
@@ -179,20 +180,53 @@ const OverallFrags: React.FC<OverallFragsProps> = ({ tournament, round }) => {
   const topPlayers = useMemo(() => {
     if (!overallData) return [];
 
-    const allPlayers = overallData.teams.flatMap(team => {
-      const teamTotalKills = team.players.reduce((sum, p) => sum + (p.killNum || 0), 0);
-      return team.players.map(player => ({
-        ...player,
-        killNum: Number(player.killNum || 0),
-        numericDamage: Number((player as any).damage ?? 0) || 0,
-        assists: Number((player as any).assists ?? 0) || 0,
-        teamTag: team.teamTag,
-        teamLogo: team.teamLogo,
-        teamPoints: team.placePoints,
-        teamTotalKills,
-        matchesPlayed: team.matchesPlayed || 0,
-        kdRatio: team.matchesPlayed ? (Number(player.killNum || 0) / team.matchesPlayed).toFixed(2) : '0.00'
-      }));
+    // First, aggregate players by uId across all teams to handle duplicates
+    const playerMap = new Map<string, any>();
+
+    overallData.teams.forEach(team => {
+      team.players.forEach(player => {
+        const key = player.uId || player._id; // Use uId if available, fallback to _id
+        if (!playerMap.has(key)) {
+          playerMap.set(key, {
+            ...player,
+            killNum: Number(player.killNum || 0),
+            numericDamage: Number((player as any).damage ?? 0) || 0,
+            assists: Number((player as any).assists ?? 0) || 0,
+            teamTag: team.teamTag,
+            teamLogo: team.teamLogo,
+            teamPoints: team.placePoints,
+            teamTotalKills: 0, // Will calculate after aggregation
+            matchesPlayed: team.matchesPlayed || 0,
+            kdRatio: '0.00'
+          });
+        } else {
+          // Sum stats for same uId
+          const existing = playerMap.get(key);
+          existing.killNum += Number(player.killNum || 0);
+          existing.numericDamage += Number((player as any).damage ?? 0) || 0;
+          existing.assists += Number((player as any).assists ?? 0) || 0;
+          // Update display fields if present
+          if (player.playerName) existing.playerName = player.playerName;
+          if (player.picUrl) existing.picUrl = player.picUrl;
+          // Keep the team with highest placePoints
+          if (team.placePoints > existing.teamPoints) {
+            existing.teamTag = team.teamTag;
+            existing.teamLogo = team.teamLogo;
+            existing.teamPoints = team.placePoints;
+          }
+          existing.matchesPlayed = Math.max(existing.matchesPlayed, team.matchesPlayed || 0);
+        }
+      });
+    });
+
+    // Calculate teamTotalKills and kdRatio for each player
+    const allPlayers = Array.from(playerMap.values()).map(player => {
+      // For simplicity, teamTotalKills is the sum of kills in the player's team
+      const playerTeam = overallData.teams.find(t => t.teamTag === player.teamTag);
+      const teamTotalKills = playerTeam ? playerTeam.players.reduce((sum, p) => sum + (p.killNum || 0), 0) : 0;
+      player.teamTotalKills = teamTotalKills;
+      player.kdRatio = player.matchesPlayed ? (player.killNum / player.matchesPlayed).toFixed(2) : '0.00';
+      return player;
     });
 
     const sorted = allPlayers.sort((a: any, b: any) => {

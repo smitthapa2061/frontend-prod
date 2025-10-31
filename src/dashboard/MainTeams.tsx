@@ -26,7 +26,7 @@ const Teams: React.FC = () => {
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [selectedPlayersPerTeam, setSelectedPlayersPerTeam] = useState<Record<string, Set<string>>>({});
   const [user, setUser] = useState<any>(null);
-
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [form, setForm] = useState({ teamFullName: '', teamTag: '', logo: '' });
 
@@ -36,6 +36,11 @@ const Teams: React.FC = () => {
 
   const [deletingPlayerIds, setDeletingPlayerIds] = useState<Set<string>>(new Set());
   const [deletingTeamIds, setDeletingTeamIds] = useState<Set<string>>(new Set());
+
+  const filteredTeams = teams.filter(team =>
+    team.teamFullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    team.teamTag.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // --- Auth check ---
   const checkAuth = async () => {
@@ -374,10 +379,17 @@ const deleteSelectedPlayers = async (teamId: string) => {
         )}
 
         <h3 className="mb-4">Teams</h3>
-        {teams.length === 0 && <p>No teams available</p>}
+        <input
+          type="text"
+          placeholder="Search teams by name or tag"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="border p-2 rounded w-full mb-4"
+        />
+        {filteredTeams.length === 0 && <p>No teams available</p>}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {teams.map((team) => (
+          {filteredTeams.map((team) => (
             <div
               key={team._id}
               className="border p-4 rounded shadow flex flex-col items-center"

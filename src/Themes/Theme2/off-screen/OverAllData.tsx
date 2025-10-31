@@ -185,7 +185,7 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, m
             <span className="w-[200px] text-center ml-[120px]">KILLS</span>
             <span className="w-[250px] text-center ml-[0px] relative left-[-10px]">PLACE</span>
             <span className="w-[100px] text-center ml-[50px] left-[-40px] relative ">TOTAL</span>
-            <span className="w-[100px] text-center ml-[50px] relative left-[-30px]">WWCD</span>
+            <span className="w-[100px] text-center ml-[50px] relative left-[-30px]">BOOYAH</span>
             <span className="w-[200px] text-center relative  left-[0px]">PTS DIFF</span>
           </div>
         </div>

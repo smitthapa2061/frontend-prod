@@ -222,7 +222,7 @@ background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tou
 
 </div>
 </div>
-  {second.players.map((p) => (
+  {second.players.slice(0,4).map((p) => (
     <div key={p._id} className="flex flex-col items-center m-[-150px] relative top-[420px]">
     <div 
   

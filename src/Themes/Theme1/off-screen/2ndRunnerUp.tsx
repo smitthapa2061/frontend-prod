@@ -166,9 +166,9 @@ className='bg-white w-[700px] h-[120px] skew-x-[20deg]'>
  {/* Players Grid and Stats */}
  <div className="">
           
- <div 
-   
- className="grid grid-cols-4 w-full h-full">
+ <div
+
+ className="grid grid-cols-4 w-full h-full" style={{ maxWidth: 'calc(4 * 25%)' }}>
  <div  style={{
 
 background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`,
@@ -222,7 +222,7 @@ background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tou
 
 </div>
 </div>
-  {third.players.map((p) => (
+  {third.players.slice(0, 4).map((p) => (
     <div key={p._id} className="flex flex-col items-center m-[-150px] relative top-[420px]">
     <div 
   

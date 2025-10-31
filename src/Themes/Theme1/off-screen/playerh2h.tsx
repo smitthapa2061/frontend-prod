@@ -53,38 +53,45 @@ interface MatchData {
 }
 
 interface PlayerH2HProps {
-  tournament: Tournament;
-  round?: Round | null;
-  match?: Match | null;
-}
+   tournament: Tournament;
+   round?: Round | null;
+   match?: Match | null;
+   matchData?: MatchData | null;
+ }
 
-const PlayerH2H: React.FC<PlayerH2HProps> = ({ tournament, round, match }) => {
-  const [matchData, setMatchData] = useState<MatchData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const PlayerH2H: React.FC<PlayerH2HProps> = ({ tournament, round, match, matchData: propMatchData }) => {
+   const [matchData, setMatchData] = useState<MatchData | null>(null);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchMatchData = async () => {
-      if (!match) return;
-      try {
-        setLoading(true);
-        const url = `https://backend-prod-530t.onrender.com/api/public/matches/${match._id}/matchdata`;
-        const res = await fetch(url, { credentials: 'include' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data: MatchData = await res.json();
-        setMatchData(data);
-        setError(null);
-      } catch (err) {
-        console.error('Failed to fetch match data:', err);
-        setError('Failed to load match data');
-        setMatchData(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+   useEffect(() => {
+     if (propMatchData) {
+       setMatchData(propMatchData);
+       setLoading(false);
+       setError(null);
+     } else {
+       const fetchMatchData = async () => {
+         if (!match) return;
+         try {
+           setLoading(true);
+           const url = `https://backend-prod-530t.onrender.com/api/public/matches/${match._id}/matchdata`;
+           const res = await fetch(url, { credentials: 'include' });
+           if (!res.ok) throw new Error(`HTTP ${res.status}`);
+           const data: MatchData = await res.json();
+           setMatchData(data);
+           setError(null);
+         } catch (err) {
+           console.error('Failed to fetch match data:', err);
+           setError('Failed to load match data');
+           setMatchData(null);
+         } finally {
+           setLoading(false);
+         }
+       };
 
-    if (match?._id) fetchMatchData();
-  }, [match?._id]);
+       if (match?._id) fetchMatchData();
+     }
+   }, [match?._id, propMatchData]);
 
   const topPlayers = useMemo(() => {
     if (!matchData) return null;

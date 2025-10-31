@@ -64,250 +64,69 @@ interface MatchFragrsProps {
 }
 
 const MatchFragrs: React.FC<MatchFragrsProps> = ({ tournament, round, match, matchData }) => {
-  const [localMatchData, setLocalMatchData] = useState<MatchData | null>(matchData || null);
-  const [matchDataId, setMatchDataId] = useState<string | null>(matchData?._id?.toString() || null);
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
-  const [socketStatus, setSocketStatus] = useState<string>('disconnected');
-  const [updateCount, setUpdateCount] = useState<number>(0);
-  const [selectedView, setSelectedView] = useState<'fragers' | 'teams'>('fragers');
+   const [localMatchData, setLocalMatchData] = useState<MatchData | null>(matchData || null);
+   const [matchDataId, setMatchDataId] = useState<string | null>(matchData?._id?.toString() || null);
+   const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
+   const [dataReceived, setDataReceived] = useState<boolean>(false);
+   const [hasFetched, setHasFetched] = useState<boolean>(false);
+   const [selectedView, setSelectedView] = useState<'fragers' | 'teams'>('fragers');
 
   useEffect(() => {
-    if (matchData) {
+    if (matchData && !dataReceived && !hasFetched) {
       console.log('MatchFragrs: Received new matchData prop, updating local state');
       setLocalMatchData(matchData);
       setMatchDataId(matchData._id?.toString());
       setLastUpdateTime(Date.now());
+      // Disconnect socket immediately after receiving prop data
+      const socketManager = SocketManager.getInstance();
+      socketManager.disconnect();
     }
-  }, [matchData]);
+  }, [matchData, dataReceived, hasFetched]);
 
   useEffect(() => {
-    if (!match?._id || !matchDataId) return;
+    if (!match?._id || !matchDataId || hasFetched) return;
 
-    console.log('Setting up real-time listeners for MatchFragrs - match:', match._id, 'matchData:', matchDataId);
-    
+    console.log('Setting up socket for initial data fetch - match:', match._id, 'matchData:', matchDataId);
+
     // Get a fresh socket connection from the manager
     const socketManager = SocketManager.getInstance();
     const freshSocket = socketManager.connect();
-    
+
     console.log('Socket connected:', freshSocket?.connected);
-    console.log('Socket ID:', freshSocket?.id);
-    
-    // Update initial status
-    setSocketStatus(freshSocket?.connected ? 'connected' : 'disconnected');
-    
+
     // Test socket connection
     freshSocket.emit('test', 'MatchFragrs component connected');
-    
-    // Log all incoming events for debugging
-    const debugHandler = (eventName: string, data: any) => {
-      console.log(`MatchFragrs: Received ${eventName}:`, data);
-    };
-    
-    freshSocket.onAny(debugHandler);
 
-    // Create unique event handler names to avoid conflicts with dashboard
-    const matchFragrsHandlers = {
-      handleLiveUpdate: (data: any) => {
-        console.log('MatchFragrs: Received liveMatchUpdate for match:', data.matchId);
-        
-        // The data is the entire MatchData object, so we need to check if it matches our current match
-        if (data.matchId?.toString() === match._id?.toString()) {
-          console.log('MatchFragrs: Updating localMatchData with live API data');
-          setLocalMatchData(data);
-          setLastUpdateTime(Date.now());
-          setUpdateCount(prev => prev + 1);
-        }
-      },
-
-      handleMatchDataUpdate: (data: any) => {
-        console.log('MatchFragrs: Received matchDataUpdated:', data);
-        if (data.matchDataId === matchDataId) {
-          setLocalMatchData((prev: MatchData | null) => {
-            if (!prev) return prev;
-            const updatedTeams = prev.teams.map((team: any) => {
-              // Check both _id and teamId for team matching
-              if (team._id === data.teamId || team.teamId === data.teamId) {
-                const changes = data.changes || {};
-                const nextTeam: any = { ...team, ...changes };
-                if (Array.isArray(changes.players)) {
-                  const updatesById = new Map(
-                    changes.players.map((p: any) => [p._id?.toString?.() || p._id, p])
-                  );
-                  nextTeam.players = team.players.map((p: Player) => {
-                    const key = p._id?.toString?.() || p._id;
-                    const upd = updatesById.get(key);
-                    return upd ? { ...p, ...upd } : p;
-                  });
-                }
-                return nextTeam;
-              }
-              return team;
-            });
-            return { ...prev, teams: updatedTeams };
-          });
-          setLastUpdateTime(Date.now());
-          setUpdateCount(prev => prev + 1);
-        }
-      },
-
-      handlePlayerUpdate: (data: any) => {
-        console.log('MatchFragrs: Received playerStatsUpdated:', data);
-        if (data.matchDataId === matchDataId) {
-          setLocalMatchData((prev: MatchData | null) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              teams: prev.teams.map((team: any) => {
-                // Check both _id and teamId for team matching
-                if (team._id === data.teamId || team.teamId === data.teamId) {
-                  return {
-                    ...team,
-                    players: team.players.map((player: Player) =>
-                      player._id === data.playerId
-                        ? { ...player, ...data.updates }
-                        : player
-                    ),
-                  };
-                }
-                return team;
-              }),
-            };
-          });
-          setLastUpdateTime(Date.now());
-        }
-      },
-
-      handleTeamPointsUpdate: (data: any) => {
-        console.log('MatchFragrs: Received team points update:', data);
-        if (data.matchDataId === matchDataId) {
-          setLocalMatchData((prev: MatchData | null) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              teams: prev.teams.map((team: any) => {
-                // Check both _id and teamId for team matching
-                if (team._id === data.teamId || team.teamId === data.teamId) {
-                  return {
-                    ...team,
-                    placePoints: data.changes?.placePoints ?? team.placePoints,
-                  };
-                }
-                return team;
-              }),
-            };
-          });
-          setLastUpdateTime(Date.now());
-        }
-      },
-
-      handleTeamStatsUpdate: (data: any) => {
-        console.log('MatchFragrs: Received teamStatsUpdated:', data);
-        if (data.matchDataId === matchDataId) {
-          setLocalMatchData((prev: MatchData | null) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              teams: prev.teams.map((team: any) => {
-                // Check both _id and teamId for team matching
-                if (team._id === data.teamId || team.teamId === data.teamId) {
-                  // Update player kill numbers if provided
-                  const updatedPlayers = data.players ?
-                    team.players.map((player: any) => {
-                      const playerUpdate = data.players.find((p: any) => p._id === player._id);
-                      return playerUpdate ? { ...player, killNum: playerUpdate.killNum } : player;
-                    }) : team.players;
-                  
-                  return {
-                    ...team,
-                    players: updatedPlayers,
-                  };
-                }
-                return team;
-              }),
-            };
-          });
-          setLastUpdateTime(Date.now());
-        }
-      },
-
-      handleBulkTeamUpdate: (data: any) => {
-        console.log('MatchFragrs: Received bulk team update:', data);
-        if (data.matchDataId === matchDataId) {
-          setLocalMatchData((prev: MatchData | null) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              teams: prev.teams.map((team: any) => {
-                // Check both _id and teamId for team matching
-                if ((team._id === data.teamId || team.teamId === data.teamId) && data.changes?.players) {
-                  const playerUpdates = new Map(
-                    data.changes.players.map((p: any) => [p._id?.toString?.() || p._id, p])
-                  );
-                  return {
-                    ...team,
-                    players: team.players.map((player: Player) => {
-                      const key = player._id?.toString?.() || player._id;
-                      const update = playerUpdates.get(key);
-                      return update ? { ...player, ...update } : player;
-                    }),
-                  };
-                }
-                return team;
-              }),
-            };
-          });
-          setLastUpdateTime(Date.now());
-        }
-      },
-
-      handleConnect: () => {
-        console.log('MatchFragrs: Socket connected');
-        setSocketStatus('connected');
-      },
-
-      handleDisconnect: () => {
-        console.log('MatchFragrs: Socket disconnected');
-        setSocketStatus('disconnected');
+    // Handler for live updates - only accept first data
+    const handleLiveUpdate = (data: any) => {
+      if (data.matchId?.toString() === match._id?.toString() && !dataReceived) {
+        console.log('MatchFragrs: Received first live data, updating and disconnecting');
+        setLocalMatchData(data);
+        setLastUpdateTime(Date.now());
+        setDataReceived(true);
+        setHasFetched(true);
+        freshSocket.off('liveMatchUpdate', handleLiveUpdate);
+        freshSocket.disconnect();
       }
     };
 
-    // Listen to all relevant socket events with unique handlers
-    freshSocket.on('liveMatchUpdate', matchFragrsHandlers.handleLiveUpdate);
-    freshSocket.on('matchDataUpdated', matchFragrsHandlers.handleMatchDataUpdate);
-    freshSocket.on('playerStatsUpdated', matchFragrsHandlers.handlePlayerUpdate);
-    freshSocket.on('teamPointsUpdated', matchFragrsHandlers.handleTeamPointsUpdate);
-    freshSocket.on('teamStatsUpdated', matchFragrsHandlers.handleTeamStatsUpdate);
-    freshSocket.on('bulkTeamUpdate', matchFragrsHandlers.handleBulkTeamUpdate);
-    freshSocket.on('connect', matchFragrsHandlers.handleConnect);
-    freshSocket.on('disconnect', matchFragrsHandlers.handleDisconnect);
+    freshSocket.on('liveMatchUpdate', handleLiveUpdate);
 
     return () => {
-      console.log('MatchFragrs: Cleaning up socket listeners');
-      // Clean up debug handler
-      freshSocket.offAny();
-      
-      // Clean up with the exact same handler references
-      freshSocket.off('liveMatchUpdate', matchFragrsHandlers.handleLiveUpdate);
-      freshSocket.off('matchDataUpdated', matchFragrsHandlers.handleMatchDataUpdate);
-      freshSocket.off('playerStatsUpdated', matchFragrsHandlers.handlePlayerUpdate);
-      freshSocket.off('teamPointsUpdated', matchFragrsHandlers.handleTeamPointsUpdate);
-      freshSocket.off('teamStatsUpdated', matchFragrsHandlers.handleTeamStatsUpdate);
-      freshSocket.off('bulkTeamUpdate', matchFragrsHandlers.handleBulkTeamUpdate);
-      freshSocket.off('connect', matchFragrsHandlers.handleConnect);
-      freshSocket.off('disconnect', matchFragrsHandlers.handleDisconnect);
-      // Notify socket manager that this component is done with the socket
-      socketManager.disconnect();
+      console.log('MatchFragrs: Cleaning up socket listener');
+      freshSocket.off('liveMatchUpdate', handleLiveUpdate);
+      // Don't disconnect here to avoid triggering UI changes
     };
-  }, [match?._id, matchDataId]);
+  }, [match?._id, matchDataId, hasFetched]);
 
   // Add effect to handle prop changes and force re-render
   useEffect(() => {
-    if (matchData && matchData._id?.toString() !== matchDataId) {
+    if (matchData && matchData._id?.toString() !== matchDataId && !dataReceived && !hasFetched) {
       console.log('MatchData prop changed, updating local state');
       setLocalMatchData(matchData);
       setMatchDataId(matchData._id?.toString());
     }
-  }, [matchData, matchDataId]);
+  }, [matchData, matchDataId, dataReceived, hasFetched]);
 
   // Typed text helper using Framer Motion
   const renderTyped = (text: string, className?: string, delayBase: number = 0) => {
@@ -346,18 +165,16 @@ const MatchFragrs: React.FC<MatchFragrsProps> = ({ tournament, round, match, mat
   // Get top 5 players by kills, then damage, then assists - recalculated on every localMatchData change
   const topPlayers = useMemo(() => {
     if (!localMatchData) return [];
-    
-    console.log('MatchFragrs: Recalculating topPlayers at', new Date(lastUpdateTime).toLocaleTimeString());
-    
+
     const allPlayers = localMatchData.teams.flatMap(team => {
       const teamTotalKills = team.players.reduce((sum, p) => sum + (p.killNum || 0), 0);
-      return team.players.map(player => ({ 
+      return team.players.map(player => ({
         ...player,
         killNum: Number(player.killNum || 0),
         // damage can be string or number coming from backend
         numericDamage: Number((player as any).damage ?? 0) || 0,
         assists: Number((player as any).assists ?? 0) || 0,
-        teamTag: team.teamTag, 
+        teamTag: team.teamTag,
         teamLogo: team.teamLogo,
         teamPoints: team.placePoints,
         teamTotalKills
@@ -372,14 +189,12 @@ const MatchFragrs: React.FC<MatchFragrsProps> = ({ tournament, round, match, mat
     });
 
     return sorted.slice(0, 5);
-  }, [localMatchData, lastUpdateTime]);
+  }, [localMatchData]);
 
   // Get sorted teams by points and kills - recalculated on every localMatchData change
   const sortedTeams = useMemo(() => {
     if (!localMatchData) return [];
-    
-    console.log('MatchFragrs: Recalculating sortedTeams at', new Date(lastUpdateTime).toLocaleTimeString());
-    
+
     return localMatchData.teams
       .map(team => ({
         ...team,
@@ -394,7 +209,7 @@ const MatchFragrs: React.FC<MatchFragrsProps> = ({ tournament, round, match, mat
         }
         return b.totalKills - a.totalKills;
       });
-  }, [localMatchData, lastUpdateTime]);
+  }, [localMatchData]);
 
   if (!localMatchData) {
     return (
@@ -467,7 +282,7 @@ const MatchFragrs: React.FC<MatchFragrsProps> = ({ tournament, round, match, mat
            
 
             <motion.div className="grid grid-cols-5 gap-[0px]"
-            
+
               initial="hidden"
               animate="show"
               variants={{
@@ -589,3 +404,4 @@ const MatchFragrs: React.FC<MatchFragrsProps> = ({ tournament, round, match, mat
 };
 
 export default MatchFragrs;
+
