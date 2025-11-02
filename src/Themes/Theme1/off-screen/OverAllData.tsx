@@ -90,8 +90,10 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, m
       // Always count the selected match
       if (matchData) {
         matchData.teams.forEach((team: any) => {
-          const teamId = team.teamId;
-          teamMatchesPlayed.set(teamId, (teamMatchesPlayed.get(teamId) || 0) + 1);
+          if (team.players && team.players.length > 0) {
+            const teamId = team.teamId;
+            teamMatchesPlayed.set(teamId, (teamMatchesPlayed.get(teamId) || 0) + 1);
+          }
         });
       }
       // Count other matches only if they have at least one team with placePoints === 10
@@ -100,8 +102,10 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, m
         const has10 = matchDataItem.teams.some((team: any) => team.placePoints === 10);
         if (has10) {
           matchDataItem.teams.forEach((team: any) => {
-            const teamId = team.teamId;
-            teamMatchesPlayed.set(teamId, (teamMatchesPlayed.get(teamId) || 0) + 1);
+            if (team.players && team.players.length > 0) {
+              const teamId = team.teamId;
+              teamMatchesPlayed.set(teamId, (teamMatchesPlayed.get(teamId) || 0) + 1);
+            }
           });
         }
       });
