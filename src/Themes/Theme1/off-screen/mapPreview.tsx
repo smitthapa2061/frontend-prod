@@ -40,41 +40,73 @@ interface MapPreviewProps {
 const MapPreview: React.FC<MapPreviewProps> = ({ tournament, round, match, matchData }) => {
   const teams = matchData?.teams || [];
 
+  // Always pick only 20 total teams (10 left + 10 right)
+  const visibleTeams = teams.slice(0, 20);
+  const leftTeams = visibleTeams.slice(0, 10);
+  const rightTeams = visibleTeams.slice(10, 20);
+
   return (
-  <div className='bg-green-500 w-[1920px] h-[1080px]'>
+    <div className="w-[1920px] h-[1080px] flex " >
+      
+      {/* Left side */}
+      <div className="w-[25%] h-full grid grid-rows-10">
+        {leftTeams.map((team) => (
+             <div
+          
+          
+          key={team.teamId} 
+          
+          style={{
+            background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`,
+          }}
+          className="flex flex-col justify-center items-center bg-black text-white  border-white border-solid border-[1px]">
+            <div className='absolute left-[415px] rotate-90 w-[110px] bg-white text-black font-bold text-center'>{team.teamTag}</div>
+            <div className="flex flex-row justify-center flex-wrap gap-1">
+              
+              {team.players?.map((player: any) => (
+                <img
+                  key={player._id}
+                  src={player.picUrl || "https://res.cloudinary.com/dqckienxj/image/upload/v1761358753/defplayer_m7qexs.png"}
+                  alt={player.playerName}
+                  className="object-contain w-[100px] h-[100px] "
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
 
-    <div className='w-[100%] h-[100%] flex'>
-        <div className='w-[25%] h-[100%] flex flex-col items-center justify-center p-4'>
-          {teams[0] && (
-            <>
-              {teams[0].logo && <img src={teams[0].logo} alt={teams[0].teamFullName} className='w-20 h-20 mb-4 object-contain' />}
-              <h3 className='text-white text-xl font-bold mb-2'>{teams[0].teamFullName} ({teams[0].teamTag})</h3>
-              <ul className='text-white text-sm'>
-                {teams[0].players?.map((player: any) => (
-                  <li key={player._id || player.playerName} className='mb-1'>{player.playerName}</li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
-        <div className=' w-[50%] h-[100%] border-white border-[10px] border-solid'>
+      {/* Center area */}
+      <div className="w-[50%] h-full border-white border-[10px] border-solid"></div>
 
-        </div>
-        <div className='w-[25%] h-[100%] flex flex-col items-center justify-center p-4'>
-          {teams[1] && (
-            <>
-              {teams[1].logo && <img src={teams[1].logo} alt={teams[1].teamFullName} className='w-20 h-20 mb-4 object-contain' />}
-              <h3 className='text-white text-xl font-bold mb-2'>{teams[1].teamFullName} ({teams[1].teamTag})</h3>
-              <ul className='text-white text-sm'>
-                {teams[1].players?.map((player: any) => (
-                  <li key={player._id || player.playerName} className='mb-1'>{player.playerName}</li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
+      {/* Right side */}
+      <div className="w-[25%] h-full grid grid-rows-10">
+        {rightTeams.map((team) => (
+          <div
+          
+          
+          key={team.teamId} 
+          
+          style={{
+            background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tournament.secondaryColor || '#333'})`,
+          }}
+          className="flex flex-col justify-center items-center bg-black text-white  border-white border-solid border-[1px]">
+            <div className='absolute left-[1365px] rotate-90 w-[110px] bg-white text-black font-bold text-center'>{team.teamTag}</div>
+            <div className="flex flex-row justify-center flex-wrap gap-1">
+              
+              {team.players?.map((player: any) => (
+                <img
+                  key={player._id}
+                  src={player.picUrl || "https://res.cloudinary.com/dqckienxj/image/upload/v1761358753/defplayer_m7qexs.png"}
+                  alt={player.playerName}
+                  className="object-contain w-[100px] h-[100px] "
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
-  </div>
   );
 };
 

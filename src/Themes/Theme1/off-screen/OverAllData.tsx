@@ -120,7 +120,12 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, m
       });
 
       // Sort by total descending
-      updatedTeams.sort((a: any, b: any) => b.total - a.total);
+      updatedTeams.sort((a: any, b: any) => {
+        if (b.total !== a.total) return b.total - a.total;
+        if (b.placePoints !== a.placePoints) return b.placePoints - a.placePoints;
+          if ((b.wwcd || 0) !== (a.wwcd || 0)) return (b.wwcd || 0) - (a.wwcd || 0); // 3️⃣ tie → higher WWCD first
+  return (b.totalKills || 0) - (a.totalKills || 0);
+      });
 
       // Calculate pointsChange and leadOverNext
       const newTotals = new Map<string, number>();
@@ -156,7 +161,7 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, m
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentPage(prev => (prev + 1) % totalPages);
-    }, 15000);
+    }, 25000);
     return () => clearInterval(interval);
   }, [totalPages]);
 

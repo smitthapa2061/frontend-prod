@@ -59,22 +59,28 @@ interface MatchDataProps {
 
 const MatchDataComponent: React.FC<MatchDataProps> = ({ tournament, round, match, matchData }) => {
   const sortedTeams = useMemo(() => {
-    if (!matchData) return [];
-    return matchData.teams
-      .map(team => ({
-        ...team,
-        totalKills: team.players.reduce((sum, p) => sum + (p.killNum || 0), 0),
-        total: (team.players.reduce((sum, p) => sum + (p.killNum || 0), 0)) + team.placePoints,
-      }))
-      .sort((a, b) => b.total - a.total); // Sort by total descending
-  }, [matchData]);
+  if (!matchData) return [];
+
+  return matchData.teams
+    .map(team => {
+      const totalKills = team.players.reduce((sum, p) => sum + (p.killNum || 0), 0);
+      const total = totalKills + team.placePoints;
+      return { ...team, totalKills, total };
+    })
+    .sort((a, b) => {
+      if (b.total !== a.total) return b.total - a.total;             // 1️⃣ total
+      if (b.placePoints !== a.placePoints) return b.placePoints - a.placePoints; // 2️⃣ place points
+      if ((b.wwcd || 0) !== (a.wwcd || 0)) return (b.wwcd || 0) - (a.wwcd || 0); // 3️⃣ WWCD
+      return (b.totalKills || 0) - (a.totalKills || 0);              // 4️⃣ kills
+    });
+}, [matchData]);
 
   // Page toggle: show ranks 2–17 first, then the rest; switch every 10s
   const [page, setPage] = useState<'first' | 'rest'>('first');
   useEffect(() => {
     const interval = setInterval(() => {
       setPage(prev => (prev === 'first' ? 'rest' : 'first'));
-    }, 10000);
+    }, 25000);
     return () => clearInterval(interval);
   }, []);
 
