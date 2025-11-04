@@ -276,7 +276,7 @@ const Schedule: React.FC<ScheduleProps> = ({ tournament, round, matches: propMat
                     return currentIndex === selectedIndex + 1;
                   })();
 
-                  let displayText = m.time || '-';
+                  let displayText = m.map || '-';
                   if (hasWinner) {
                     displayText = `WWCD | ${winningTeams[0].teamTag}`;
                   } else if (isUpNext) {
