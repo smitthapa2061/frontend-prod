@@ -17,7 +17,8 @@
     "jsx": "react-jsx",
     "types": ["node"],
     "baseUrl": "./src",
-    "ignoreDeprecations": "6.0"
+    "ignoreDeprecations": "6.0",
+    "allowImportingTsExtensions": true
   },
   "include": ["src"],
   "exclude": ["node_modules"]

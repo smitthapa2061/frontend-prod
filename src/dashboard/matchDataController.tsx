@@ -1,4 +1,4 @@
-  import React, { useEffect, useRef, useState, useMemo } from 'react';
+  import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
   import { useParams } from 'react-router-dom';
     import api from '../login/api';
   import { socket } from "./socket"; // shared socket
@@ -74,15 +74,42 @@ const [sortBy, setSortBy] = useState<'slot' | 'placePoints'>('slot');
     const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
     const [playersLoading, setPlayersLoading] = useState(false);
 
-   const teamRefs = useRef<Record<string, HTMLDivElement | null>>({});
-   const matchCacheRef = useRef<Record<string, any>>({});
-  const setTeamRef = (id: string) => (el: HTMLDivElement | null) => {
-    if (el) teamRefs.current[id] = el;
-  };
-    useEffect(() => {
+    const teamRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const matchCacheRef = useRef<Record<string, any>>({});
+   const setTeamRef = (id: string) => (el: HTMLDivElement | null) => {
+     if (el) teamRefs.current[id] = el;
+   };
+
+    const fetchMatchData = useCallback(async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const url = `/tournament/${tournamentId}/round/${roundId}/match/${matchId}/matchdata`;
+        const response = await api.get(url);
+        const data = response.data;
+
+        // Normalize team IDs so _id always exists
+       setMatchData({
+      ...data,
+      teams: Array.isArray(data?.teams)
+        ? data.teams.map((team: Team) => ({
+      ...team,
+      _id: team?._id || team?.teamId || null,
+      placePoints: team.placePoints ?? 0,
+    }))
+        : [],
+    });
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch match data');
+      } finally {
+        setLoading(false);
+      }
+    }, [tournamentId, roundId, matchId]);
+
+     useEffect(() => {
       if (!tournamentId || !roundId || !matchId) return;
       fetchMatchData();
-    }, [tournamentId, roundId, matchId]);
+    }, [tournamentId, roundId, matchId, fetchMatchData]);
 useEffect(() => {
   if (!socket) return;
 
@@ -156,31 +183,6 @@ useEffect(() => {
   };
 }, []);
 
-    const fetchMatchData = async () => {
-  setLoading(true);
-  setError(null);
-  try {
-    const url = `/tournament/${tournamentId}/round/${roundId}/match/${matchId}/matchdata`;
-    const response = await api.get(url);
-    const data = response.data;
-
-    // Normalize team IDs so _id always exists
-   setMatchData({
-  ...data,
-  teams: Array.isArray(data?.teams)
-    ? data.teams.map((team: Team) => ({
-  ...team,
-  _id: team?._id || team?.teamId || null,
-  placePoints: team.placePoints ?? 0,
-}))
-    : [],
-});
-  } catch (err: any) {
-    setError(err.message || 'Failed to fetch match data');
-  } finally {
-    setLoading(false);
-  }
-};
 
 // Create batchers for different types of updates with proper accumulators
 const killUpdateBatcher = useRef(new UpdateBatcher<{ change: number }>(

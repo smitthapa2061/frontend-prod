@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FaTrash, FaEdit } from 'react-icons/fa';
 import Group from './GroupsData.tsx';
 import api from '../login/api.tsx';
 import { socket } from './socket.tsx';
 
-interface Round {
+interface RoundData {
   _id: string;
   roundName: string;
   roundNumber: number;
@@ -16,7 +16,7 @@ interface Round {
 
 const Round: React.FC = () => {
   const { tournamentId } = useParams<{ tournamentId?: string }>();
-  const [rounds, setRounds] = useState<Round[]>([]);
+  const [rounds, setRounds] = useState<RoundData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,21 +36,7 @@ const Round: React.FC = () => {
   const [editDay, setEditDay] = useState('');
   const [editApiEnable, setEditApiEnable] = useState(false);
 
-  useEffect(() => {
-    fetchRounds();
-
-    // Listen for real-time round updates
-    socket.on('roundUpdated', () => {
-      // Clear cache and refetch
-      sessionStorage.removeItem(cacheKey);
-      fetchRounds();
-    });
-    return () => {
-      socket.off('roundUpdated', fetchRounds);
-    };
-  }, [tournamentId, cacheKey]);
-
-  const fetchRounds = async () => {
+  const fetchRounds = useCallback(async () => {
     setLoading(true);
     try {
       // Always fetch fresh data, don't use cache for now to ensure apiEnable updates are visible
@@ -68,7 +54,21 @@ const Round: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tournamentId, cacheKey]);
+
+  useEffect(() => {
+    fetchRounds();
+
+    // Listen for real-time round updates
+    socket.on('roundUpdated', () => {
+      // Clear cache and refetch
+      sessionStorage.removeItem(cacheKey);
+      fetchRounds();
+    });
+    return () => {
+      socket.off('roundUpdated', fetchRounds);
+    };
+  }, [tournamentId, cacheKey, fetchRounds]);
 
   const openAddModal = () => {
     setShowAddModal(true);
@@ -121,7 +121,7 @@ const Round: React.FC = () => {
     }
   };
 
-  const handleEditClick = (round: Round) => {
+  const handleEditClick = (round: RoundData) => {
     setEditRoundId(round._id);
     setEditRoundName(round.roundName);
     setEditRoundNumber(round.roundNumber);
