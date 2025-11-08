@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import api from "../login/api.tsx";
-import SocketManager from "./socketManager.tsx";
+import api from "../login/api";
+import SocketManager from "./socketManager";
 
 interface Selection {
   _id: string;
@@ -104,7 +104,7 @@ const PollingManager: React.FC = () => {
       console.log("Socket disconnected");
       socketManager.disconnect();
     };
-  }, []);
+   }, [activeMatchId]);
 
   // --- Fetch initial selections ---
   useEffect(() => {

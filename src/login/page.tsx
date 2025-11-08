@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "./api";
 
@@ -16,10 +16,6 @@ interface UserData {
   sessionCookie?: string | null;
 }
 
-// Response from login endpoint
-interface LoginResponse extends UserData {
-  message?: string;
-}
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");

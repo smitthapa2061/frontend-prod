@@ -1,6 +1,6 @@
 import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { FaEdit, FaTrash, FaDiscord, FaWhatsapp } from "react-icons/fa";
+import { FaEdit, FaTrash, FaDiscord } from "react-icons/fa";
 import api from "../login/api"; // Axios instance with withCredentials
 import { socket } from "./socket"; // socket instance
 import { setCache, getCache, removeCache } from "./cache"; // ✅ caching utils

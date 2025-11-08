@@ -1,10 +1,9 @@
   import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
-  import api from '../login/api.tsx';
-import { socket } from "./socket.tsx"; // shared socket
-import SocketManager from './socketManager.tsx';
-import debounce from 'lodash.debounce'; // npm install lodash.debounce
-import { requestQueue, UpdateBatcher } from './requestQueue.tsx';
+  import { useParams } from 'react-router-dom';
+    import api from '../login/api';
+  import { socket } from "./socket"; // shared socket
+  import SocketManager from './socketManager';
+  import { requestQueue, UpdateBatcher } from './requestQueue';
 
 // Retry utility with exponential backoff
 const retryWithBackoff = async (fn: () => Promise<any>, maxRetries = 3, baseDelay = 1000) => {
@@ -196,7 +195,6 @@ const updateKillCount = async (teamIndex: number, playerIndex: number, change: n
 
   const team = matchData.teams[teamIndex];
   const player = team.players[playerIndex];
-  const playerKey = `${teamIndex}-${playerIndex}`;
 
   // Calculate new killNum, clamp at 0
   const newKillNum = Math.max(0, player.killNum + change);
@@ -224,7 +222,7 @@ const updateKillCount = async (teamIndex: number, playerIndex: number, change: n
 
   // Use the batcher to accumulate changes
   killUpdateBatcher.current.batch(
-    playerKey,
+    `${teamIndex}-${playerIndex}`,
     { change: actualChange },
     async (batchedUpdate) => {
       await retryWithBackoff(() =>
@@ -239,36 +237,6 @@ const updateKillCount = async (teamIndex: number, playerIndex: number, change: n
 
 // Use the direct function for immediate UI response
 const throttledUpdateKillCount = updateKillCount;
-const updatePlacePointsLocal = async (teamIndex: number, newPoints: number) => {
-  if (!matchData) return;
-
-  const team = matchData.teams[teamIndex];
-
-  setMatchData((prevData: any) => {
-    if (!prevData || !prevData.teams || !prevData.teams[teamIndex]) return prevData;
-
-    const updatedTeams = [...prevData.teams];
-    updatedTeams[teamIndex] = {
-      ...updatedTeams[teamIndex],
-      placePoints: typeof newPoints === 'number' ? newPoints : 0,
-    };
-
-    return { ...prevData, teams: updatedTeams };
-  });
-
-  // Send patch request to backend
-  try {
-    await retryWithBackoff(() =>
-      api.patch(
-        `/tournament/${tournamentId}/round/${roundId}/match/${matchId}/matchdata/${matchData._id}/team/${team._id}/points`,
-        { placePoints: newPoints }
-      )
-    );
-  } catch (err) {
-    console.error('Failed to update team points on backend:', err);
-  }
-
-  };
 
 
 
