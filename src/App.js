@@ -8,67 +8,21 @@ import MatchDataViewer from "./dashboard/matchDataController.tsx";
 import DisplayHud from "./dashboard/DisplayHud.tsx";
 import PublicThemeRenderer from "./dashboard/PublicThemeRenderer.tsx";
 import Login from "./login/page.tsx";
-import ProtectedRoute from "./login/ProtectedRoute.tsx";
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
 
-        {/* Protected routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tournaments/:tournamentId/rounds"
-          element={
-            <ProtectedRoute>
-              <Round />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tournaments/:tournamentId/rounds/:roundId/matches"
-          element={
-            <ProtectedRoute>
-              <Match />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tournaments/:tournamentId/rounds/:roundId/matches/:matchId"
-          element={
-            <ProtectedRoute>
-              <MatchDataViewer />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/teams"
-          element={
-            <ProtectedRoute>
-              <Teams />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/displayhud"
-          element={
-            <ProtectedRoute>
-              <DisplayHud />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/public/tournament/:tournamentId/round/:roundId/match/:matchId"
-          element={<PublicThemeRenderer />}
-        />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/tournaments/:tournamentId/rounds" element={<Round />} />
+        <Route path="/tournaments/:tournamentId/rounds/:roundId/matches" element={<Match />} />
+        <Route path="/tournaments/:tournamentId/rounds/:roundId/matches/:matchId" element={<MatchDataViewer />} />
+        <Route path="/teams" element={<Teams />} />
+        <Route path="/displayhud" element={<DisplayHud />} />
+        <Route path="/public/tournament/:tournamentId/round/:roundId/match/:matchId" element={<PublicThemeRenderer />} />
       </Routes>
     </Router>
   );

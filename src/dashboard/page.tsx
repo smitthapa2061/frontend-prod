@@ -1,9 +1,9 @@
 import React, { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { FaEdit, FaTrash, FaDiscord, FaWhatsapp } from "react-icons/fa";
-import api from "../login/api.tsx"; // Axios instance with withCredentials
-import { socket } from "./socket.tsx"; // socket instance
-import { setCache, getCache } from "./cache.tsx"; // ✅ caching utils
+import api from "../login/api"; // Axios instance with withCredentials
+import { socket } from "./socket"; // socket instance
+import { setCache, getCache, removeCache } from "./cache"; // ✅ caching utils
 
 interface TournamentFormState {
   tournamentName: string;
@@ -46,23 +46,33 @@ const Dashboard: React.FC = () => {
 
   // --- Auth check (cached) ---
   const checkAuth = async () => {
+    console.log("checkAuth called");
     const cachedUser = getCache(GLOBAL_CACHE_KEY, 1000 * 60 * 5);
+    console.log("Cached user:", cachedUser);
     if (cachedUser) return cachedUser;
 
     try {
+      console.log("Making API call to /users/me");
       const { data } = await api.get("/users/me");
+      console.log("API response:", data);
       setCache(GLOBAL_CACHE_KEY, data);
       return data;
-    } catch {
+    } catch (err) {
+      console.error("Auth check failed:", err);
+      // Clear cache on auth failure
+      removeCache(GLOBAL_CACHE_KEY);
       return null;
     }
   };
 
   // --- Fetch tournaments with caching (per user) ---
   const fetchTournaments = async () => {
+    console.log("fetchTournaments called");
     const userData = await checkAuth();
+    console.log("checkAuth returned:", userData);
     if (!userData) {
-      navigate("/");
+      console.log("No user data, redirecting to login");
+      navigate("/login");
       return;
     }
     setUser(userData);
@@ -70,7 +80,7 @@ const Dashboard: React.FC = () => {
     const key = `${CACHE_KEY_BASE}_${userData._id}`;
 
     // Try cache first (10 minutes TTL)
-    const cached = getCache(key, 1000 * 60 * 10);
+    const cached = getCache(CACHE_KEY_BASE, 1000 * 60 * 10);
     if (cached) {
       setTournaments(cached);
       return;
@@ -80,13 +90,14 @@ const Dashboard: React.FC = () => {
     try {
       const { data } = await api.get<Tournament[]>("/tournaments");
       setTournaments(data);
-      setCache(key, data);
+      setCache(CACHE_KEY_BASE, data);
     } catch (err: any) {
       console.error("Error fetching tournaments:", err.response?.data?.message || err.message);
     }
   };
 
   useEffect(() => {
+    console.log("Dashboard useEffect triggered");
     fetchTournaments();
 
     const handleNewTournament = (tournament: Tournament) => {
@@ -94,9 +105,7 @@ const Dashboard: React.FC = () => {
         // avoid duplicates
         if (prev.find((t) => t._id === tournament._id)) return prev;
         const updated = [...prev, tournament];
-        const cachedUser = getCache(GLOBAL_CACHE_KEY, 1000 * 60 * 5);
-        const key = cachedUser ? `${CACHE_KEY_BASE}_${cachedUser._id}` : CACHE_KEY_BASE;
-        setCache(key, updated);
+        setCache(CACHE_KEY_BASE, updated);
         return updated;
       });
     };
@@ -119,9 +128,7 @@ const Dashboard: React.FC = () => {
       const { data } = await api.post("/tournaments", form);
       const updated = [...tournaments, data];
       setTournaments(updated);
-      const cachedUser = getCache(GLOBAL_CACHE_KEY, 1000 * 60 * 5);
-      const key = cachedUser ? `${CACHE_KEY_BASE}_${cachedUser._id}` : CACHE_KEY_BASE;
-      setCache(key, updated);
+      setCache(CACHE_KEY_BASE, updated);
       setForm({
         tournamentName: "",
         torLogo: "",
@@ -166,9 +173,7 @@ const Dashboard: React.FC = () => {
         t._id === updatedTournament._id ? updatedTournament : t
       );
       setTournaments(updated);
-      const cachedUser = getCache(GLOBAL_CACHE_KEY, 1000 * 60 * 5);
-      const key = cachedUser ? `${CACHE_KEY_BASE}_${cachedUser._id}` : CACHE_KEY_BASE;
-      setCache(key, updated);
+      setCache(CACHE_KEY_BASE, updated);
       setEditingTournament(null);
       alert("Tournament updated successfully");
     } catch (err: any) {
@@ -185,9 +190,7 @@ const Dashboard: React.FC = () => {
       await api.delete(`/tournaments/${id}`);
       const updated = tournaments.filter((t) => t._id !== id);
       setTournaments(updated);
-      const cachedUser = getCache(GLOBAL_CACHE_KEY, 1000 * 60 * 5);
-      const key = cachedUser ? `${CACHE_KEY_BASE}_${cachedUser._id}` : CACHE_KEY_BASE;
-      setCache(key, updated);
+      setCache(CACHE_KEY_BASE, updated);
       alert("Tournament deleted successfully");
     } catch (err: any) {
       console.error("Delete error:", err.response?.data?.message || err.message);

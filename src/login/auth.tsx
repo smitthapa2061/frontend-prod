@@ -1,5 +1,5 @@
-import api from "./api.tsx";
-import { getCache, setCache, removeCache } from "../dashboard/cache.tsx";
+import api from "./api";
+import { getCache, setCache, removeCache } from "../dashboard/cache";
 
 const AUTH_CACHE_KEY = "auth_user";
 
