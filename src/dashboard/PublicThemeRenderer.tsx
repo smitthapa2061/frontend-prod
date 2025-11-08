@@ -151,6 +151,7 @@ const PublicThemeRenderer: React.FC = () => {
   const [overallData, setOverallData] = useState<OverallData | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [matchDatas, setMatchDatas] = useState<MatchData[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedScheduleMatches, setSelectedScheduleMatches] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

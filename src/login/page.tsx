@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "./api";
 
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 // Interface for user data from the API
 interface UserData {
   _id: string;

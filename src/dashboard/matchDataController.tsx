@@ -426,7 +426,6 @@ const togglePlayerDeath = async (teamIndex: number, playerIndex: number) => {
   const team = matchData.teams[teamIndex];
   const player = team.players[playerIndex];
   const newBHasDied = !player.bHasDied;
-  const playerKey = `${teamIndex}-${playerIndex}-death`;
 
   // Optimistic UI
   setMatchData((prev: MatchData | null) => {
@@ -445,7 +444,7 @@ const togglePlayerDeath = async (teamIndex: number, playerIndex: number) => {
 
   // Use batcher to prevent rapid requests
   deathUpdateBatcher.current.batch(
-    playerKey,
+    `${teamIndex}-${playerIndex}-death`,
     { bHasDied: newBHasDied },
     async (batchedUpdate) => {
       await retryWithBackoff(() =>
@@ -464,7 +463,6 @@ const toggleAllPlayersDeath = async (teamIndex: number) => {
 
   const team = matchData.teams[teamIndex];
   const newValue = !team.players.every((p: Player) => p.bHasDied);
-  const teamKey = `${teamIndex}-bulk-death`;
 
   // Optimistic UI
   setMatchData((prev: MatchData | null) => {

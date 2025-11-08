@@ -77,6 +77,7 @@ const Dashboard: React.FC = () => {
     }
     setUser(userData);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const key = `${CACHE_KEY_BASE}_${userData._id}`;
 
     // Try cache first (10 minutes TTL)

@@ -88,7 +88,7 @@ const Round: React.FC = () => {
       const url = tournamentId
         ? `/tournaments/${tournamentId}/rounds`
         : '/tournaments/undefined/rounds';
-      const { data: newRound } = await api.post(url, {
+      await api.post(url, {
         roundName,
         roundNumber,
         day,
@@ -134,7 +134,7 @@ const Round: React.FC = () => {
       const url = tournamentId
         ? `/tournaments/${tournamentId}/rounds/${roundId}`
         : `/rounds/${roundId}`;
-      const { data: updatedRound } = await api.put(url, {
+      await api.put(url, {
         roundName: editRoundName,
         roundNumber: editRoundNumber,
         day: editDay,
