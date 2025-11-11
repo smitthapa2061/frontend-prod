@@ -18,7 +18,7 @@ interface Team {
   players: Player[];
 }
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://backend-prod-03dl.onrender.com/api';
 
 const Teams: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
