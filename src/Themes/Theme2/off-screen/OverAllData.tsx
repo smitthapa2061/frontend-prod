@@ -144,7 +144,7 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, m
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentPage(prev => (prev + 1) % totalPages);
-    }, 15000);
+    }, 25000);
     return () => clearInterval(interval);
   }, [totalPages]);
 

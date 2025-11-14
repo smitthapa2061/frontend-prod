@@ -75,6 +75,7 @@ interface OverallFragsProps {
 const OverallFrags: React.FC<OverallFragsProps> = ({ tournament, round }) => {
   const [overallData, setOverallData] = useState<OverallData | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [matchDatas, setMatchDatas] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -115,6 +116,7 @@ const OverallFrags: React.FC<OverallFragsProps> = ({ tournament, round }) => {
           console.log('Overall data not available, using calculated data from matches');
         }
         const matchDatas: (MatchData | null)[] = await Promise.all(matchDataPromises);
+        setMatchDatas(matchDatas.filter(m => m !== null) as MatchData[]);
 
         const teamMatchesCount = new Map<string, number>();
         matchDatas.forEach(matchData => {
@@ -176,68 +178,92 @@ const OverallFrags: React.FC<OverallFragsProps> = ({ tournament, round }) => {
     show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.16, 1, 0.3, 1] as any } }
   };
 
-  // Get top 5 players by kills, then damage, then assists from overall data
+  // Get top 5 players by comprehensive score
   const topPlayers = useMemo(() => {
-    if (!overallData) return [];
+    if (!overallData || matchDatas.length === 0) return [];
 
-    // First, aggregate players by uId across all teams to handle duplicates
     const playerMap = new Map<string, any>();
 
-    overallData.teams.forEach(team => {
-      team.players.forEach(player => {
-        const key = player.uId || player._id; // Use uId if available, fallback to _id
-        if (!playerMap.has(key)) {
-          playerMap.set(key, {
-            ...player,
-            killNum: Number(player.killNum || 0),
-            numericDamage: Number((player as any).damage ?? 0) || 0,
-            assists: Number((player as any).assists ?? 0) || 0,
-            teamTag: team.teamTag,
-            teamLogo: team.teamLogo,
-            teamPoints: team.placePoints,
-            teamTotalKills: 0, // Will calculate after aggregation
-            matchesPlayed: team.matchesPlayed || 0,
-            kdRatio: '0.00'
-          });
-        } else {
-          // Sum stats for same uId
-          const existing = playerMap.get(key);
-          existing.killNum += Number(player.killNum || 0);
-          existing.numericDamage += Number((player as any).damage ?? 0) || 0;
-          existing.assists += Number((player as any).assists ?? 0) || 0;
-          // Update display fields if present
-          if (player.playerName) existing.playerName = player.playerName;
-          if (player.picUrl) existing.picUrl = player.picUrl;
-          // Keep the team with highest placePoints
-          if (team.placePoints > existing.teamPoints) {
-            existing.teamTag = team.teamTag;
-            existing.teamLogo = team.teamLogo;
-            existing.teamPoints = team.placePoints;
+    matchDatas.forEach(matchData => {
+      matchData.teams.forEach(team => {
+        team.players.forEach(player => {
+          const key = player.uId || player._id;
+          if (!playerMap.has(key)) {
+            playerMap.set(key, {
+              ...player,
+              totalKills: Number(player.killNum || 0),
+              totalDamage: Number((player as any).damage ?? 0) || 0,
+              totalAssists: Number((player as any).assists ?? 0) || 0,
+              totalSurvival: player.survivalTime || 0,
+              appearances: 1,
+              teamTag: team.teamTag,
+              teamLogo: team.teamLogo,
+              teamPoints: team.placePoints,
+              teamTotalKills: 0
+            });
+          } else {
+            const existing = playerMap.get(key);
+            existing.totalKills += Number(player.killNum || 0);
+            existing.totalDamage += Number((player as any).damage ?? 0) || 0;
+            existing.totalAssists += Number((player as any).assists ?? 0) || 0;
+            existing.totalSurvival += player.survivalTime || 0;
+            existing.appearances += 1;
+            if (player.playerName) existing.playerName = player.playerName;
+            if (player.picUrl) existing.picUrl = player.picUrl;
+            if (team.placePoints > existing.teamPoints) {
+              existing.teamTag = team.teamTag;
+              existing.teamLogo = team.teamLogo;
+              existing.teamPoints = team.placePoints;
+            }
           }
-          existing.matchesPlayed = Math.max(existing.matchesPlayed, team.matchesPlayed || 0);
-        }
+        });
       });
     });
 
-    // Calculate teamTotalKills and kdRatio for each player
+    let totalKillsAll = 0;
+    let totalDamageAll = 0;
+    let totalAssistsAll = 0;
+    let totalSurvivalAll = 0;
+    let totalAppearances = 0;
+    playerMap.forEach(player => {
+      totalKillsAll += player.totalKills;
+      totalDamageAll += player.totalDamage;
+      totalAssistsAll += player.totalAssists;
+      totalSurvivalAll += player.totalSurvival;
+      totalAppearances += player.appearances;
+    });
+
+    const avgKills = totalAppearances > 0 ? totalKillsAll / totalAppearances : 0;
+    const avgDamage = totalAppearances > 0 ? totalDamageAll / totalAppearances : 0;
+    const avgAssists = totalAppearances > 0 ? totalAssistsAll / totalAppearances : 0;
+    const avgSurvival = totalAppearances > 0 ? totalSurvivalAll / totalAppearances : 0;
+
     const allPlayers = Array.from(playerMap.values()).map(player => {
-      // For simplicity, teamTotalKills is the sum of kills in the player's team
+      const playerAvgKills = player.appearances > 0 ? player.totalKills / player.appearances : 0;
+      const playerAvgDamage = player.appearances > 0 ? player.totalDamage / player.appearances : 0;
+      const playerAvgAssists = player.appearances > 0 ? player.totalAssists / player.appearances : 0;
+      const playerAvgSurvival = player.appearances > 0 ? player.totalSurvival / player.appearances : 0;
+      const score = avgKills > 0 && avgDamage > 0 && avgSurvival > 0 ?
+        (playerAvgKills / avgKills * 0.45) + (playerAvgDamage / avgDamage * 0.3) + (playerAvgSurvival / avgSurvival * 0.25) : 0;
+
       const playerTeam = overallData.teams.find(t => t.teamTag === player.teamTag);
       const teamTotalKills = playerTeam ? playerTeam.players.reduce((sum, p) => sum + (p.killNum || 0), 0) : 0;
-      player.teamTotalKills = teamTotalKills;
-      player.kdRatio = player.matchesPlayed ? (player.killNum / player.matchesPlayed).toFixed(2) : '0.00';
-      return player;
+
+      return {
+        ...player,
+        killNum: player.totalKills,
+        numericDamage: playerAvgDamage,
+        assists: playerAvgAssists,
+        matchesPlayed: player.appearances,
+        score,
+        teamTotalKills
+      };
     });
 
-    const sorted = allPlayers.sort((a: any, b: any) => {
-      if (b.killNum !== a.killNum) return b.killNum - a.killNum; // priority 1: kills
-      if (b.numericDamage !== a.numericDamage) return b.numericDamage - a.numericDamage; // priority 2: damage
-      if (b.assists !== a.assists) return b.assists - a.assists; // priority 3: assists
-      return 0;
-    });
+    const sorted = allPlayers.sort((a: any, b: any) => b.score - a.score);
 
     return sorted.slice(0, 5);
-  }, [overallData]);
+  }, [overallData, matchDatas]);
 
   if (loading) {
     return (
@@ -280,7 +306,7 @@ const OverallFrags: React.FC<OverallFragsProps> = ({ tournament, round }) => {
               </h1>
               {round && (
                 <motion.p
-                  className="text-gray-300 text-[2rem] font-[Righteous] whitespace-pre p-[10px]"
+                  className="text-white text-[2rem] font-[Righteous] whitespace-pre p-[10px]"
                   initial={{ backgroundColor: 'rgba(255,0,0,0.2)' }}
                   animate={{ backgroundColor: ['rgba(255,0,0,0.25)','rgba(255,0,0,0.45)','rgba(255,0,0,0.25)'] }}
                   transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
@@ -362,23 +388,23 @@ const OverallFrags: React.FC<OverallFragsProps> = ({ tournament, round }) => {
                       <div className="text-white mt-[-20px]">KILLS</div>
                     </div>
                     <div>
-                      <div className="text-yellow-400 text-[3rem] ">{player.numericDamage}</div>
-                      <div className="text-white mt-[-20px]">DAMAGE</div>
+                      <div className="text-yellow-400 text-[3rem] ">{player.numericDamage.toFixed(0)}</div>
+                      <div className="text-white mt-[-20px]">AVG DMG</div>
                     </div>
                     <div>
-                      <div className="text-yellow-400 text-[3rem] ">{player.assists}</div>
-                      <div className="text-white mt-[-20px]">ASSISTS</div>
+                      <div className="text-yellow-400 text-[3rem] ">{player.assists.toFixed(0)}</div>
+                      <div className="text-white mt-[-20px]">AVG AST</div>
                     </div>
                   </div>
 
-                  {/* K/D Ratio */}
+                  {/* Score */}
                   <div className="w-full absolute top-[450px]">
-                    <div className="flex text-xs text-gray-300 font-[Righteous] mb-1 items-center justify-center">
-                      <span className='text-[1rem] '>K/D Ratio</span>
-                      <span className=' text-center text-[1rem] ml-[10px]'>{player.kdRatio}</span>
+                    <div className="flex text-xs text-white font-[Righteous] mb-1 items-center justify-center">
+                      <span className='text-[1rem] '>comprehensive score</span>
+                      <span className=' text-center text-[1rem] ml-[10px]'>{player.score.toFixed(2)}</span>
                     </div>
                     <div className="w-[90%] bg-gray-700 rounded-full h-2 relative left-[10px] ">
-                      <div className="h-2 rounded-full bg-yellow-400 transition-all duration-500" style={{ width: `${Math.min(100, parseFloat(player.kdRatio) * 10)}%` }} />
+                      <div className="h-2 rounded-full bg-yellow-400 transition-all duration-500" style={{ width: `${Math.min(100, player.score * 10)}%` }} />
                     </div>
                   </div>
                 </motion.div>

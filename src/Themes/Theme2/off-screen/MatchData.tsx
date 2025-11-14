@@ -74,7 +74,7 @@ const MatchDataComponent: React.FC<MatchDataProps> = ({ tournament, round, match
   useEffect(() => {
     const interval = setInterval(() => {
       setPage(prev => (prev === 'first' ? 'rest' : 'first'));
-    }, 10000);
+    },25000);
     return () => clearInterval(interval);
   }, []);
 
