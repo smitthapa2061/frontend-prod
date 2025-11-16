@@ -154,9 +154,9 @@ className='bg-white w-[700px] h-[120px] skew-x-[20deg]'>
 </div>
 
 </div>
-<div className='font-bebas font-[300] text-[3rem] absolute top-[-10px] left-[640px]' >
+<div className='font-bebas font-[300] text-[3rem] absolute top-[-10px] left-[640px] w-[100%] h-[100%]' >
     
-    <img src={third.teamLogo} alt="" className='w-[20%]'/>
+    <img src={third.teamLogo} alt="" className='w-[140px] h-[140px] object-contain'/>
     
     </div>
 <div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[840px] text-white ' > 

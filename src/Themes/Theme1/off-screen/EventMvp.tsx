@@ -219,8 +219,8 @@ const EventMvp: React.FC<EventMvpProps> = ({ tournament, round, overallData: pro
           <div className='bg-white w-[25%] h-full'></div>
         </div>
 
-        <div className='font-bebas font-[300] text-[3rem] absolute top-[-10px] left-[640px]'>
-          <img src={mvp.teamLogo} alt={mvp.teamTag} className='w-[20%] object-contain'/>
+        <div className='font-bebas font-[300] text-[3rem] absolute top-[-10px] left-[640px] w-[35%]'>
+          <img src={mvp.teamLogo} alt={mvp.teamTag} className='w-[20%] h-[20%] object-contain'/>
         </div>
         <div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[840px] text-white'>
           {mvp.playerName}

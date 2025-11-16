@@ -260,7 +260,20 @@ const OverallFrags: React.FC<OverallFragsProps> = ({ tournament, round }) => {
       };
     });
 
-    const sorted = allPlayers.sort((a: any, b: any) => b.score - a.score);
+    const sorted = allPlayers.sort((a, b) => {
+  // 1. Sort by kills
+  if (b.killNum !== a.killNum) return b.killNum - a.killNum;
+
+  // 2. Then by comprehensive score
+  if (b.score !== a.score) return b.score - a.score;
+
+  // 3. Then by average damage
+  if (b.numericDamage !== a.numericDamage) return b.numericDamage - a.numericDamage;
+
+  // 4. Then by average assists
+  return b.assists - a.assists;
+});
+
 
     return sorted.slice(0, 5);
   }, [overallData, matchDatas]);
