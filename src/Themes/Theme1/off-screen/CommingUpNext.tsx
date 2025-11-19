@@ -42,7 +42,7 @@ const CommingUpNext: React.FC<CommingUpNextProps> = ({ tournament, round, match 
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`https://backend-prod-bs4c.onrender.com/api/public/rounds/${round._id}/matches`);
+        const res = await fetch(`https://backend-prod-d80y.onrender.com/api/public/rounds/${round._id}/matches`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: Match[] = await res.json();
         setMatches(data || []);
