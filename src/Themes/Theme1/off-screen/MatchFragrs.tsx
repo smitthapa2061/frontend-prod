@@ -99,7 +99,7 @@ const MatchFragrs: React.FC<MatchFragrsProps> = ({ tournament, round, match, mat
 
     // Handler for live updates - only accept first data
     const handleLiveUpdate = (data: any) => {
-      if (data.matchId?.toString() === match._id?.toString() && !dataReceived) {
+      if (data._id?.toString() === matchDataId && !dataReceived) {
         console.log('MatchFragrs: Received first live data, updating and disconnecting');
         setLocalMatchData(data);
         setLastUpdateTime(Date.now());

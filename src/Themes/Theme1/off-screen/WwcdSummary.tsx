@@ -87,7 +87,7 @@ const WwcdSummary: React.FC<WwcdSummaryProps> = ({ tournament, round, match, mat
 
     const handlers = {
       handleLiveUpdate: (data: any) => {
-        if (data.matchId?.toString() === match._id?.toString()) {
+        if (data._id?.toString() === matchDataId) {
           setLocalMatchData(data);
           setLastUpdateTime(Date.now());
         }

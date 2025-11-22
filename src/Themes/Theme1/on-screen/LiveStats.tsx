@@ -105,15 +105,18 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
     // Create unique event handler names to avoid conflicts with dashboard
     const liveStatsHandlers = {
       handleLiveUpdate: (data: any) => {
-        console.log('LiveStats: Received liveMatchUpdate for match:', data.matchId);
-        
-        // The data is the entire MatchData object, so we need to check if it matches our current match
-        if (data.matchId?.toString() === match._id?.toString()) {
-          console.log('LiveStats: Updating localMatchData with live API data');
-          setLocalMatchData(data);
-          setLastUpdateTime(Date.now());
-          setUpdateCount(prev => prev + 1);
+        console.log('LiveStats: Received liveMatchUpdate for match:', data._id);
+
+        // Check if this update is for the current matchData
+        if (data._id?.toString() !== matchDataId) {
+          console.log('LiveStats: liveMatchUpdate not for current matchData, ignoring');
+          return;
         }
+
+        console.log('LiveStats: Updating localMatchData with live API data');
+        setLocalMatchData(data);
+        setLastUpdateTime(Date.now());
+        setUpdateCount(prev => prev + 1);
       },
 
       handleMatchDataUpdate: (data: any) => {

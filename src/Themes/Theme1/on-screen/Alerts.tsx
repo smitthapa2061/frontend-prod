@@ -128,6 +128,12 @@ const Alerts: React.FC<AlertsProps> = ({ tournament, round, match, matchData }) 
       handleLiveUpdate: (data: any) => {
         console.log('Alerts: Received liveMatchUpdate for match:', data._id);
 
+        // Check if this update is for the current match
+        if (data._id?.toString() !== matchDataId) {
+          console.log('Alerts: liveMatchUpdate not for current match, ignoring');
+          return;
+        }
+
         // Create hash of incoming data for comparison
         const newHash = createDataHash(data);
 
@@ -136,7 +142,7 @@ const Alerts: React.FC<AlertsProps> = ({ tournament, round, match, matchData }) 
         // Only process if data has actually changed
         if (previousDataHash !== newHash) {
           console.log('Alerts: Data has changed, processing update');
-          // Assume the update is for this component since matchDataId is set
+          // Process the update for this match
           if (data._id) {
             console.log('Alerts: Updating localMatchData with live API data');
             setLocalMatchData((prev: MatchData | null) => {

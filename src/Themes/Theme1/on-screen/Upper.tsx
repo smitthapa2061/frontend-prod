@@ -102,15 +102,18 @@ const Upper: React.FC<UpperProps> = ({ tournament, round, match, matchData }) =>
     // Create unique event handler names to avoid conflicts with dashboard
     const upperHandlers = {
       handleLiveUpdate: (data: any) => {
-        console.log('Upper: Received liveMatchUpdate for match:', data.matchId);
+        console.log('Upper: Received liveMatchUpdate for match:', data._id);
 
-        // The data is the entire MatchData object, so we need to check if it matches our current match
-        if (data.matchId?.toString() === match._id?.toString()) {
-          console.log('Upper: Updating localMatchData with live API data');
-          setLocalMatchData(data);
-          setLastUpdateTime(Date.now());
-          setUpdateCount(prev => prev + 1);
+        // Check if this update is for the current matchData
+        if (data._id?.toString() !== matchDataId) {
+          console.log('Upper: liveMatchUpdate not for current matchData, ignoring');
+          return;
         }
+
+        console.log('Upper: Updating localMatchData with live API data');
+        setLocalMatchData(data);
+        setLastUpdateTime(Date.now());
+        setUpdateCount(prev => prev + 1);
       },
 
       handleMatchDataUpdate: (data: any) => {

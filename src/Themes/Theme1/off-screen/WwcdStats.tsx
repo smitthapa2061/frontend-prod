@@ -101,7 +101,7 @@ const WwcdStats: React.FC<WwcdSummaryProps> = ({ tournament, round, match, match
 
     const handlers = {
       handleLiveUpdate: (data: any) => {
-        if (data.matchId?.toString() === match._id?.toString()) {
+        if (data._id?.toString() === matchDataId) {
           console.log('WwcdSummary: Applying live API match update');
           setLocalMatchData(data);
           setLastUpdateTime(Date.now());
