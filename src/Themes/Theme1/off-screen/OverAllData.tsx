@@ -90,30 +90,28 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, m
       // Always count the selected match
       if (matchData) {
         matchData.teams.forEach((team: any) => {
-          if (team.players && team.players.length > 0) {
+          if (team.players && team.players.length > 0 && (team.placePoints === 50 || (team.placePoints !== -1 && team.placePoints !== 9))) {
             const teamId = team.teamId;
             teamMatchesPlayed.set(teamId, (teamMatchesPlayed.get(teamId) || 0) + 1);
           }
         });
       }
-      // Count other matches only if they have at least one team with placePoints === 10
+      // Count other matches
       matchDatas.forEach((matchDataItem) => {
         if (matchData && matchDataItem._id === matchData._id) return; // Skip if it's the selected match
-        const has10 = matchDataItem.teams.some((team: any) => team.placePoints === 10);
-        if (has10) {
-          matchDataItem.teams.forEach((team: any) => {
-            if (team.players && team.players.length > 0) {
-              const teamId = team.teamId;
-              teamMatchesPlayed.set(teamId, (teamMatchesPlayed.get(teamId) || 0) + 1);
-            }
-          });
-        }
+        matchDataItem.teams.forEach((team: any) => {
+          if (team.players && team.players.length > 0 && (team.placePoints === 50 || (team.placePoints !== -1 && team.placePoints !== 9))) {
+            const teamId = team.teamId;
+            teamMatchesPlayed.set(teamId, (teamMatchesPlayed.get(teamId) || 0) + 1);
+          }
+        });
       });
 
       // Update totals and calculate additional fields
       const updatedTeams = overallData.teams.map((team: any) => {
         const totalKills = team.players.reduce((sum: number, p: any) => sum + (p.killNum || 0), 0);
-        const total = totalKills + team.placePoints;
+        const effectivePlacePoints = (team.placePoints === 50 || team.placePoints === 9) ? 0 : team.placePoints;
+        const total = totalKills + effectivePlacePoints;
         const matchesPlayed = teamMatchesPlayed.get(team.teamId) || 0;
         return {
           ...team,

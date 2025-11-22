@@ -97,7 +97,8 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, m
       // Update totals and calculate additional fields
       const updatedTeams = overallData.teams.map((team: any) => {
         const totalKills = team.players.reduce((sum: number, p: any) => sum + (p.killNum || 0), 0);
-        const total = totalKills + team.placePoints;
+        const effectivePlacePoints = (team.placePoints === 50 || team.placePoints === 9) ? 0 : team.placePoints;
+        const total = totalKills + effectivePlacePoints;
         const matchesPlayed = teamMatchesPlayed.get(team.teamId) || 0;
         return {
           ...team,

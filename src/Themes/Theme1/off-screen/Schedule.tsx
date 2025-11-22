@@ -187,7 +187,7 @@ const Schedule: React.FC<ScheduleProps> = ({ tournament, round, matches: propMat
       </motion.div>
 
       {/* Matches list */}
-      <div className="absolute top-[220px] left-[0px] w-[2200px]">
+      <div className="absolute top-[220px] left-[0px] w-[1900px]">
     
         <div className="mt-[80px] flex flex-row flex-wrap gap-4 justify-center">
           {sortedMatches.map((m, idx) => (
