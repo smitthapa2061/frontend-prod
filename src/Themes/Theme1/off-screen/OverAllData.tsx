@@ -89,22 +89,28 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, m
       const teamMatchesPlayed = new Map<string, number>();
       // Always count the selected match
       if (matchData) {
-        matchData.teams.forEach((team: any) => {
-          if (team.players && team.players.length > 0 && (team.placePoints === 50 || (team.placePoints !== -1 && team.placePoints !== 9))) {
-            const teamId = team.teamId;
-            teamMatchesPlayed.set(teamId, (teamMatchesPlayed.get(teamId) || 0) + 1);
-          }
-        });
+        const hasTenPlacePoints = matchData.teams.some((team: any) => team.placePoints === 10);
+        if (hasTenPlacePoints) {
+          matchData.teams.forEach((team: any) => {
+            if (team.players && team.players.length > 0) {
+              const teamId = team.teamId;
+              teamMatchesPlayed.set(teamId, (teamMatchesPlayed.get(teamId) || 0) + 1);
+            }
+          });
+        }
       }
       // Count other matches
       matchDatas.forEach((matchDataItem) => {
         if (matchData && matchDataItem._id === matchData._id) return; // Skip if it's the selected match
-        matchDataItem.teams.forEach((team: any) => {
-          if (team.players && team.players.length > 0 && (team.placePoints === 50 || (team.placePoints !== -1 && team.placePoints !== 9))) {
-            const teamId = team.teamId;
-            teamMatchesPlayed.set(teamId, (teamMatchesPlayed.get(teamId) || 0) + 1);
-          }
-        });
+        const hasTenPlacePoints = matchDataItem.teams.some((team: any) => team.placePoints === 10);
+        if (hasTenPlacePoints) {
+          matchDataItem.teams.forEach((team: any) => {
+            if (team.players && team.players.length > 0) {
+              const teamId = team.teamId;
+              teamMatchesPlayed.set(teamId, (teamMatchesPlayed.get(teamId) || 0) + 1);
+            }
+          });
+        }
       });
 
       // Update totals and calculate additional fields
