@@ -69,7 +69,7 @@ const MatchSummary: React.FC<MatchSummaryProps> = ({ tournament, round, match })
       if (!match) return;
       try {
         setLoading(true);
-        const url = `https://backend-prod-d80y.onrender.com/api/public/matches/${match._id}/matchdata`;
+        const url = `https://backend-prod-bs4c.onrender.com/api/public/matches/${match._id}/matchdata`;
         const res = await fetch(url, { credentials: 'include' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: MatchData = await res.json();
