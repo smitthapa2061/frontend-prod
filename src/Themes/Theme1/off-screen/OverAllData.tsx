@@ -113,17 +113,34 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, m
         }
       });
 
+      // Get the latest matchData (assuming matchDatas is ordered by addition, take the last)
+      let latestMatchData = matchData;
+      if (matchDatas && matchDatas.length > 0) {
+        latestMatchData = matchDatas[matchDatas.length - 1];
+      }
+
       // Update totals and calculate additional fields
       const updatedTeams = overallData.teams.map((team: any) => {
         const totalKills = team.players.reduce((sum: number, p: any) => sum + (p.killNum || 0), 0);
         const effectivePlacePoints = (team.placePoints === 50 || team.placePoints === 9) ? 0 : team.placePoints;
         const total = totalKills + effectivePlacePoints;
         const matchesPlayed = teamMatchesPlayed.get(team.teamId) || 0;
+
+        // Get teamLogo from latest matchData
+        let teamLogo = team.teamLogo;
+        if (latestMatchData) {
+          const matchTeam = latestMatchData.teams.find((mt: any) => mt.teamId === team.teamId);
+          if (matchTeam && matchTeam.teamLogo) {
+            teamLogo = matchTeam.teamLogo;
+          }
+        }
+
         return {
           ...team,
           totalKills,
           total,
           matchesPlayed,
+          teamLogo,
         };
       });
 
