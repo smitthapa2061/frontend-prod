@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://backend-prod-bs4c.onrender.com/api",
+  baseURL: process.env.REACT_APP_API_URL || "https://backend-prod-6uuq.onrender.com/",
   withCredentials: true,  // MUST BE HERE ONLY
 });
 

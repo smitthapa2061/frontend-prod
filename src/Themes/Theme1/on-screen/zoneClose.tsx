@@ -93,7 +93,7 @@ const ZoneClose: React.FC<ZoneCloseProps> = ({ tournament, round, match }) => {
 
     console.log('Setting up zone close listeners for match:', match._id);
 
-    const freshSocket = io("https://backend-prod-bs4c.onrender.com", {
+    const freshSocket = io("https://backend-prod-6uuq.onrender.com", {
       transports: ["websocket", "polling"],
       withCredentials: true,
       reconnection: true,
