@@ -200,150 +200,243 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div>
-      <div className="bg-gray-800 text-white p-4 w-full h-[100px] flex flex-col items-center">
-        <div className="flex justify-between items-center space-x-5 mb-4 relative top-[10px] w-full">
-          <div className="absolute w-[60px] ml-[10px] mt-[5px]"><img src="https://res.cloudinary.com/dqckienxj/image/upload/v1760081339/scoresync_logo.jpg_hsz7qz.png" alt="logo" className="w-full h-full "/></div>
-          <div></div>
-          <div className="flex space-x-5 justify-center">
-            <button
-              onClick={() => (window.location.href = '/dashboard')}
-              className="bg-white text-black font-medium text-[1rem] rounded-xl px-6 py-2 border-2 border-transparent"
-            >
-              TOURNAMENTS
-            </button>
-            <button
-              onClick={() => window.open('/teams', '_blank', 'noopener,noreferrer')}
-              className="bg-white text-black font-medium text-[1rem] rounded-xl px-6 py-2 border-2 border-transparent cursor-pointer hover:bg-gray-200 transition"
-            >
-              ADD TEAMS
-            </button>
-            <button
-              onClick={() => window.open('/displayhud', '_blank', 'noopener,noreferrer')}
-              className="bg-white text-black font-medium text-[1rem] rounded-xl px-6 py-2 border-2 border-transparent cursor-pointer hover:bg-gray-200 transition"
-            >
-              DISPLAY HUD
-            </button>
-          </div>
-           <div className="text-right">
-                     {user && <span className="font-bold font-mono font-300 text-[1rem] text-right">ADMIN:{user.username}</span>}
-                     <div className="font-mono flex items-center ">HelpDesk <FaDiscord className="cursor-pointer  hover:text-red-700 text-[2rem] text-white" onClick={() => window.open('https://discord.com/channels/623776491682922526/1426117227257663558', '_blank')} /></div>
-                    
-                   </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Header/Navigation Bar */}
+      <header className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <img
+                src="https://res.cloudinary.com/dqckienxj/image/upload/v1760081339/scoresync_logo.jpg_hsz7qz.png"
+                alt="ScoreSync Logo"
+                className="w-12 h-12 rounded-lg shadow-lg"
+              />
+              <h1 className="text-xl font-bold text-white">ScoreSync</h1>
+            </div>
 
-      {/* Tournament Manager */}
-      <div className="w-full h-full">
+            {/* Navigation Buttons */}
+            <nav className="flex items-center gap-3">
+              <button
+                onClick={() => (window.location.href = '/dashboard')}
+                className="bg-purple-600 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Tournaments
+              </button>
+              <button
+                onClick={() => window.open('/teams', '_blank', 'noopener,noreferrer')}
+                className="bg-slate-700 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-slate-600 transition-colors"
+              >
+                Add Teams
+              </button>
+              <button
+                onClick={() => window.open('/displayhud', '_blank', 'noopener,noreferrer')}
+                className="bg-slate-700 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-slate-600 transition-colors"
+              >
+                Display HUD
+              </button>
+            </nav>
+
+            {/* User Info */}
+            <div className="flex items-center gap-4">
+              {user && (
+                <span className="text-sm text-gray-300 font-medium">
+                  Admin: <span className="text-white">{user.username}</span>
+                </span>
+              )}
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <span>Help Desk</span>
+                <FaDiscord
+                  className="cursor-pointer text-2xl text-gray-300 hover:text-purple-400 transition-colors"
+                  onClick={() => window.open('https://discord.com/channels/623776491682922526/1426117227257663558', '_blank')}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-white mb-2">Tournament Dashboard</h2>
+          <p className="text-gray-400">Manage your tournaments and configurations</p>
+        </div>
+
+        {/* Add Tournament Button */}
         <button
-          className="bg-[#232323] text-white px-6 py-2 rounded-xl mt-4 ml-4 "
+          className="bg-purple-600 text-white font-medium px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors mb-6 shadow-lg"
           onClick={() => setShowForm(!showForm)}
         >
-          ADD TOURNAMENT
+          + Add Tournament
         </button>
 
         {/* --- Create Form --- */}
-       {showForm && (
-  <form
-    onSubmit={handleSubmit}
-    className="max-w-md mx-auto p-4 mt-4 bg-white rounded shadow"
-  >
-    {[
-      { name: "tournamentName", placeholder: "Tournament Name" },
-      { name: "torLogo", placeholder: "Tournament Logo URL" },
-      { name: "info", placeholder: "Additional Info" },
-      { name: "primaryColor", placeholder: "hex code of Primary Color(#ffffff)" },
-      { name: "secondaryColor", placeholder: "hex code of Secondary Color(#41hr1R2)" },
-      { name: "overlayBg", placeholder: "Overlay Background" },
-    ].map((field) => (
-      <input
-        key={field.name}
-        type="text"
-        name={field.name}
-        placeholder={field.placeholder}
-        value={(form as any)[field.name]}
-        onChange={handleChange}
-        className="w-full mb-3 p-2 border rounded"
-      />
-    ))}
-    <button
-      type="submit"
-      className="bg-blue-600 text-white px-4 py-2 rounded"
-    >
-      Submit
-    </button>
-  </form>
-)}
+        {showForm && (
+          <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-8 shadow-xl max-w-2xl">
+            <h3 className="text-xl font-bold text-white mb-4">Create New Tournament</h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {[
+                { name: "tournamentName", placeholder: "Tournament Name" },
+                { name: "torLogo", placeholder: "Tournament Logo URL" },
+                { name: "day", placeholder: "Tournament Day" },
+                { name: "primaryColor", placeholder: "Primary Color (e.g., #ffffff)" },
+                { name: "secondaryColor", placeholder: "Secondary Color (e.g., #000000)" },
+                { name: "overlayBg", placeholder: "Overlay Background (e.g., #1a1a1a)" },
+              ].map((field) => (
+                <div key={field.name}>
+                  <input
+                    type="text"
+                    name={field.name}
+                    placeholder={field.placeholder}
+                    value={(form as any)[field.name]}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              ))}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  className="bg-purple-600 text-white font-medium px-6 py-2.5 rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  Create Tournament
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="bg-slate-700 text-white font-medium px-6 py-2.5 rounded-lg hover:bg-slate-600 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* --- Edit Form --- */}
         {editingTournament && (
-          <form
-            onSubmit={handleEditSubmit}
-            className="p-4 border rounded mb-4 max-w-md mx-auto box-border"
-          >
-            <h3 className="text-xl font-bold mb-4">Edit Tournament</h3>
-            {["tournamentName", "torLogo", "Additional info", "primaryColor", "secondaryColor", "overlayBg"].map(
-              (field) => (
-                <input
-                  key={field}
-                  type="text"
-                  name={field}
-                  value={(editForm as any)[field] || ""}
-                  onChange={handleEditChange}
-                  placeholder={field.replace(/([A-Z])/g, " $1").trim()}
-                  className="mb-2 p-2 border rounded w-full"
-                />
-              )
-            )}
-            <div className="flex gap-2">
-              <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">
-                Save
-              </button>
-              <button
-                type="button"
-                onClick={() => setEditingTournament(null)}
-                className="bg-gray-400 text-white px-4 py-2 rounded"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+          <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-8 shadow-xl max-w-2xl">
+            <h3 className="text-xl font-bold text-white mb-4">Edit Tournament</h3>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              {["tournamentName", "torLogo", "day", "primaryColor", "secondaryColor", "overlayBg"].map(
+                (field) => (
+                  <div key={field}>
+                    <input
+                      type="text"
+                      name={field}
+                      value={(editForm as any)[field] || ""}
+                      onChange={handleEditChange}
+                      placeholder={field.replace(/([A-Z])/g, " $1").trim()}
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                )
+              )}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  className="bg-green-600 text-white font-medium px-6 py-2.5 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingTournament(null)}
+                  className="bg-slate-700 text-white font-medium px-6 py-2.5 rounded-lg hover:bg-slate-600 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         )}
 
         {/* --- Tournament List --- */}
-        <ul className="space-y-4 w-full mt-[20px]">
-          {tournaments.map((t) => (
-            <li
-              key={t._id}
-              className="p-4 border rounded shadow-md relative w-full box-border"
-              style={{ backgroundColor: t.overlayBg }}
-            >
-              <div className="absolute top-2 right-2 flex space-x-3">
-                <FaEdit
-                  className="cursor-pointer text-blue-600 hover:text-blue-800"
-                  title="Edit"
-                  onClick={() => handleEdit(t._id)}
-                  size={28}
-                />
-                <FaTrash
-                  className="cursor-pointer text-red-600 hover:text-red-800"
-                  title="Delete"
-                  onClick={() => handleDelete(t._id)}
-                  size={28}
-                />
+        {tournaments.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {tournaments.map((t) => (
+              <div
+                key={t._id}
+                className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow relative group"
+              >
+                {/* Action Buttons */}
+                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => handleEdit(t._id)}
+                    className="p-2 bg-blue-600/80 rounded-lg hover:bg-blue-600 transition-colors"
+                    title="Edit"
+                  >
+                    <FaEdit className="text-white" size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(t._id)}
+                    className="p-2 bg-red-600/80 rounded-lg hover:bg-red-600 transition-colors"
+                    title="Delete"
+                  >
+                    <FaTrash className="text-white" size={18} />
+                  </button>
+                </div>
+
+                {/* Tournament Content */}
+                <Link to={`/tournaments/${t._id}/rounds`} className="block">
+                  <div className="mb-4">
+                    {t.torLogo && (
+                      <img
+                        src={t.torLogo}
+                        alt={t.tournamentName}
+                        className="w-16 h-16 rounded-lg object-cover mb-3"
+                      />
+                    )}
+                    <h3
+                      className="text-xl font-bold mb-2 hover:underline"
+                      style={{ color: t.primaryColor || '#ffffff' }}
+                    >
+                      {t.tournamentName}
+                    </h3>
+                    {t.day && (
+                      <p className="text-sm text-gray-400">
+                        {t.day}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Color Preview */}
+                  <div className="flex gap-2 mt-4">
+                    <div
+                      className="w-8 h-8 rounded border border-slate-600"
+                      style={{ backgroundColor: t.primaryColor }}
+                      title="Primary Color"
+                    />
+                    <div
+                      className="w-8 h-8 rounded border border-slate-600"
+                      style={{ backgroundColor: t.secondaryColor }}
+                      title="Secondary Color"
+                    />
+                  </div>
+                </Link>
               </div>
-              <Link to={`/tournaments/${t._id}/rounds`}>
-                <h3
-                  className="text-lg font-semibold mb-2 underline hover:text-blue-700"
-                  style={{ color: t.primaryColor }}
-                >
-                  {t.tournamentName}
-                </h3>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-800/50 mb-4">
+              <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-400 mb-2">No tournaments yet</h3>
+            <p className="text-gray-500 mb-6">Get started by creating your first tournament</p>
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-purple-600 text-white font-medium px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Create Tournament
+            </button>
+          </div>
+        )}
+      </main>
     </div>
   );
 };

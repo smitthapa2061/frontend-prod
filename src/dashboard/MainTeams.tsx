@@ -18,7 +18,7 @@ interface Team {
   players: Player[];
 }
 
-const API_URL = 'https://backend-prod-6uuq.onrender.com/api';
+const API_URL = 'https://backend-prod-bs4c.onrender.com/api';
 
 const Teams: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -198,301 +198,344 @@ const Teams: React.FC = () => {
     }
   };
 
-const deleteSelectedPlayers = async (teamId: string) => {
-  const selectedSet = selectedPlayersPerTeam[teamId];
-  if (!selectedSet || selectedSet.size === 0) return;
-  if (!window.confirm('Delete selected players?')) return;
+  const deleteSelectedPlayers = async (teamId: string) => {
+    const selectedSet = selectedPlayersPerTeam[teamId];
+    if (!selectedSet || selectedSet.size === 0) return;
+    if (!window.confirm('Delete selected players?')) return;
 
-  const playerIdsArray = Array.from(selectedSet);
+    const playerIdsArray = Array.from(selectedSet);
 
-  try {
-    await axios.delete(`${API_URL}/teams/${teamId}/players`, {
-      data: { playerIds: playerIdsArray },
-    });
+    try {
+      await axios.delete(`${API_URL}/teams/${teamId}/players`, {
+        data: { playerIds: playerIdsArray },
+      });
 
-    setTeams((prev) =>
-      prev.map((team) =>
-        team._id === teamId
-          ? { ...team, players: team.players.filter((p) => !selectedSet.has(p._id!)) }
-          : team
-      )
-    );
+      setTeams((prev) =>
+        prev.map((team) =>
+          team._id === teamId
+            ? { ...team, players: team.players.filter((p) => !selectedSet.has(p._id!)) }
+            : team
+        )
+      );
 
-    if (editingTeamId === teamId) {
-      setPlayersForm((prev) => prev.filter((p) => !playerIdsArray.includes(p._id!)));
+      if (editingTeamId === teamId) {
+        setPlayersForm((prev) => prev.filter((p) => !playerIdsArray.includes(p._id!)));
+      }
+
+      // Clear selection for this team only
+      setSelectedPlayersPerTeam((prev) => ({ ...prev, [teamId]: new Set() }));
+    } catch (err) {
+      alert('Failed to delete selected players');
+      console.error(err);
     }
-
-    // Clear selection for this team only
-    setSelectedPlayersPerTeam((prev) => ({ ...prev, [teamId]: new Set() }));
-  } catch (err) {
-    alert('Failed to delete selected players');
-    console.error(err);
-  }
-};
+  };
 
 
   return (
-    <>
-      {/* Fixed Navigation Bar */}
-      <nav
-        className="fixed top-0 left-0 right-0 bg-gray-800 text-white p-4 flex justify-between items-center z-50"
-        style={{ margin: 0 }}
-      >
-        <div className="absolute w-[60px] ml-[10px] mt-[5px]"><img src="https://res.cloudinary.com/dqckienxj/image/upload/v1760081339/scoresync_logo.jpg_hsz7qz.png" alt="logo" className="w-full h-full "/></div> 
-        <div></div>
-        <div className="flex space-x-6 justify-center">
-          <button
-            onClick={goToTournaments}
-            className="bg-white text-black font-medium rounded-xl px-6 py-2 hover:bg-gray-200 transition"
-          >
-            TOURNAMENT
-          </button>
-          <button
-            onClick={goToAddTeams}
-            className="bg-white text-black font-medium rounded-xl px-6 py-2 hover:bg-gray-200 transition"
-          >
-            ADD TEAMS
-          </button>
-          <button
-            onClick={goToDisplayHUD}
-            className="bg-white text-black font-medium rounded-xl px-6 py-2 hover:bg-gray-200 transition"
-          >
-            DISPLAY HUD
-          </button>
-        </div>
-         <div className="text-right">
-                   {user && <span className="font-bold font-mono font-300 text-[1rem] text-right">ADMIN:{user.username}</span>}
-                   <div className="font-mono flex items-center ">Join Discord <FaDiscord className="cursor-pointer  hover:text-red-700 text-[2rem] text-white" onClick={() => window.open('https://discord.com/channels/623776491682922526/1426117227257663558', '_blank')} /></div>
-                  
-                 </div>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Header/Navigation Bar - Matching Dashboard */}
+      <header className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <img
+                src="https://res.cloudinary.com/dqckienxj/image/upload/v1760081339/scoresync_logo.jpg_hsz7qz.png"
+                alt="ScoreSync Logo"
+                className="w-12 h-12 rounded-lg shadow-lg"
+              />
+              <h1 className="text-xl font-bold text-white">ScoreSync</h1>
+            </div>
 
-      {/* Padding below fixed nav to prevent overlap */}
-      <div className="pt-[64px] max-w-6xl mx-auto p-4">
+            {/* Navigation Buttons */}
+            <nav className="flex items-center gap-3">
+              <button
+                onClick={goToTournaments}
+                className="bg-slate-700 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-slate-600 transition-colors"
+              >
+                Tournaments
+              </button>
+              <button
+                onClick={goToAddTeams}
+                className="bg-purple-600 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Add Teams
+              </button>
+              <button
+                onClick={goToDisplayHUD}
+                className="bg-slate-700 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-slate-600 transition-colors"
+              >
+                Display HUD
+              </button>
+            </nav>
+
+            {/* User Info */}
+            <div className="flex items-center gap-4">
+              {user && (
+                <span className="text-sm text-gray-300 font-medium">
+                  Admin: <span className="text-white">{user.username}</span>
+                </span>
+              )}
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <span>Help Desk</span>
+                <FaDiscord
+                  className="cursor-pointer text-2xl text-gray-300 hover:text-purple-400 transition-colors"
+                  onClick={() => window.open('https://discord.com/channels/623776491682922526/1426117227257663558', '_blank')}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-white mb-2">Team Management</h2>
+          <p className="text-gray-400">Create and manage your teams and players</p>
+        </div>
+
+        {/* Add Team Button */}
         <button
           onClick={() => {
             if (showForm) resetForm();
             else setShowForm(true);
           }}
-          className="mt-[40px] bg-blue-600 text-white px-4 py-2 rounded "
+          className="bg-purple-600 text-white font-medium px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors mb-6 shadow-lg"
         >
-          {showForm ? 'Close Form' : editingTeamId ? 'Edit Team' : 'Add Team'}
+          {showForm ? 'Close Form' : editingTeamId ? 'Edit Team' : '+ Add Team'}
         </button>
 
         {showForm && (
-          <form onSubmit={handleSubmit} className="border p-4 rounded mb-6 space-y-4">
-            <input
-              type="text"
-              name="teamFullName"
-              placeholder="Team Full Name"
-              value={form.teamFullName}
-              onChange={handleTeamInputChange}
-              required
-              className="border p-2 rounded w-full"
-              autoFocus
-            />
-            <input
-              type="text"
-              name="teamTag"
-              placeholder="Team Tag"
-              value={form.teamTag}
-              onChange={handleTeamInputChange}
-              required
-              className="border p-2 rounded w-full"
-            />
-            <input
-              type="text"
-              name="logo"
-              placeholder="Team Logo URL"
-              value={form.logo}
-              onChange={handleTeamInputChange}
-              className="border p-2 rounded w-full"
-            />
-            {form.logo && (
-              <img
-                src={form.logo}
-                alt="Logo Preview"
-                className="w-24 h-24 object-contain my-2"
-                loading="lazy"
+          <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 mb-8 shadow-xl">
+            <h3 className="text-xl font-bold text-white mb-4">
+              {editingTeamId ? 'Edit Team' : 'Create New Team'}
+            </h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input
+                type="text"
+                name="teamFullName"
+                placeholder="Team Full Name"
+                value={form.teamFullName}
+                onChange={handleTeamInputChange}
+                required
+                className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                autoFocus
               />
-            )}
-
-            <h4 className="font-semibold">Players</h4>
-            {playersForm.map((player, index) => (
-              <div key={player._id || index} className="flex space-x-2 mb-2 items-center">
-                <input
-                  type="text"
-                  name="playerName"
-                  placeholder="Player Name"
-                  value={player.playerName}
-                  onChange={(e) => handlePlayerChange(index, e)}
-                  required
-                  className="border p-2 rounded flex-grow"
-                />
-                <input
-                  type="text"
-                  name="playerId"
-                  placeholder="Player ID (optional)"
-                  value={player.playerId}
-                  onChange={(e) => handlePlayerChange(index, e)}
-                  className="border p-2 rounded w-36"
-                />
-                <input
-                  type="text"
-                  name="photo"
-                  placeholder="Photo URL (optional)"
-                  value={player.photo}
-                  onChange={(e) => handlePlayerChange(index, e)}
-                  className="border p-2 rounded w-40"
-                />
-                {playersForm.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removePlayerInput(index)}
-                    className="bg-red-600 text-white px-2 py-1 rounded"
-                    title="Remove player"
-                  >
-                    <FaTrash />
-                  </button>
-                )}
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={addPlayerInput}
-              className="bg-green-600 text-white px-4 py-1 rounded mb-4"
-            >
-              Add Another Player
-            </button>
-
-            <div className="flex space-x-4">
-              <button type="submit" className="bg-blue-700 text-white px-6 py-2 rounded">
-                {editingTeamId ? 'Update Team' : 'Create Team'}
-              </button>
-              {editingTeamId && (
-                <button type="button" onClick={resetForm} className="border px-6 py-2 rounded">
-                  Cancel
-                </button>
-              )}
-            </div>
-          </form>
-        )}
-
-        <h3 className="mb-4">Teams</h3>
-        <input
-          type="text"
-          placeholder="Search teams by name or tag"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="border p-2 rounded w-full mb-4"
-        />
-        {filteredTeams.length === 0 && <p>No teams available</p>}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredTeams.map((team) => (
-            <div
-              key={team._id}
-              className="border p-4 rounded shadow flex flex-col items-center"
-            >
-              {team.logo && (
+              <input
+                type="text"
+                name="teamTag"
+                placeholder="Team Tag"
+                value={form.teamTag}
+                onChange={handleTeamInputChange}
+                required
+                className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              />
+              <input
+                type="text"
+                name="logo"
+                placeholder="Team Logo URL"
+                value={form.logo}
+                onChange={handleTeamInputChange}
+                className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              />
+              {form.logo && (
                 <img
-                  src={team.logo}
-                  alt={`${team.teamFullName} logo`}
-                  className="w-20 h-20 object-contain mb-2"
+                  src={form.logo}
+                  alt="Logo Preview"
+                  className="w-24 h-24 object-contain my-2 rounded-lg border border-slate-600"
                   loading="lazy"
                 />
               )}
-              <h4 className="font-semibold text-center">
-                {team.teamFullName} ({team.teamTag})
-              </h4>
 
-              <div className="w-full mt-2">
-                <h5 className="font-semibold mb-1">Players</h5>
-                {team.players.length === 0 ? (
-                  <p>No players</p>
-                ) : (
-                 <ul className="text-sm space-y-1">
-  {team.players.map((player) => (
-   <li key={player._id || player.playerName} className="flex justify-between items-center">
-  <div className="flex items-center space-x-2">
-    <input
-      type="checkbox"
-      checked={selectedPlayersPerTeam[team._id]?.has(player._id!) || false}
-      onChange={() => {
-        setSelectedPlayersPerTeam((prev) => {
-          const teamSet = new Set(prev[team._id] || []);
-          if (teamSet.has(player._id!)) teamSet.delete(player._id!);
-          else teamSet.add(player._id!);
-          return { ...prev, [team._id]: teamSet };
-        });
-      }}
-    />
-    
-   
+              <h4 className="font-semibold text-white mt-4">Players</h4>
+              {playersForm.map((player, index) => (
+                <div key={player._id || index} className="flex gap-2 mb-2 items-center">
+                  <input
+                    type="text"
+                    name="playerName"
+                    placeholder="Player Name"
+                    value={player.playerName}
+                    onChange={(e) => handlePlayerChange(index, e)}
+                    required
+                    className="px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all flex-grow"
+                  />
+                  <input
+                    type="text"
+                    name="playerId"
+                    placeholder="Player ID (optional)"
+                    value={player.playerId}
+                    onChange={(e) => handlePlayerChange(index, e)}
+                    className="px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all w-36"
+                  />
+                  <input
+                    type="text"
+                    name="photo"
+                    placeholder="Photo URL (optional)"
+                    value={player.photo}
+                    onChange={(e) => handlePlayerChange(index, e)}
+                    className="px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all w-40"
+                  />
+                  {playersForm.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removePlayerInput(index)}
+                      className="p-2.5 bg-red-600 rounded-lg hover:bg-red-700 transition-colors text-white"
+                      title="Remove player"
+                    >
+                      <FaTrash />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addPlayerInput}
+                className="bg-green-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-green-700 transition-colors mb-4"
+              >
+                + Add Another Player
+              </button>
 
-    <span>
-      <strong>{player.playerName}</strong>
-      {player.playerId && ` (${player.playerId})`}
-    </span>
-  </div>
-   {player.photo && (
-      <img
-        src={player.photo}
-        alt={player.playerName}
-        className="w-6 h-6 rounded-full object-cover"
-        loading="lazy"
-      />
-    )}
-
-  {player._id && (
-    <button
-      onClick={() => deletePlayer(team._id, player._id!)}
-      className="text-red-600 hover:text-red-800"
-      title="Delete Player"
-      disabled={deletingPlayerIds.has(player._id!)}
-    >
-      <FaTrash size={16} />
-    </button>
-  )}
-  
-</li>
-
-  ))}
-</ul>
-
+              <div className="flex gap-3 pt-2">
+                <button type="submit" className="bg-purple-600 text-white font-medium px-6 py-2.5 rounded-lg hover:bg-purple-700 transition-colors">
+                  {editingTeamId ? 'Update Team' : 'Create Team'}
+                </button>
+                {editingTeamId && (
+                  <button type="button" onClick={resetForm} className="bg-slate-700 text-white font-medium px-6 py-2.5 rounded-lg hover:bg-slate-600 transition-colors">
+                    Cancel
+                  </button>
                 )}
-    {selectedPlayersPerTeam[team._id]?.size > 0 && (
-  <button
-    onClick={() => deleteSelectedPlayers(team._id)}
-    className="bg-red-600 text-white px-4 py-1 rounded mt-2"
-  >
-    Delete Selected Players ({selectedPlayersPerTeam[team._id].size})
-  </button>
-)}
               </div>
+            </form>
+          </div>
+        )}
 
-              <div className="mt-auto pt-[80px] flex space-x-2">
-                <button
-                  onClick={() => startEditTeam(team)}
-                  className="bg-yellow-400 px-3 py-1 rounded"
-                  aria-label={`Edit team ${team.teamFullName}`}
-                >
-                  <FaEdit />
-                </button>
-                <button
-                  onClick={() => deleteTeam(team._id)}
-                  className="bg-red-600 px-3 py-1 rounded text-white"
-                  aria-label={`Delete team ${team.teamFullName}`}
-                  disabled={deletingTeamIds.has(team._id)}
-                >
-                  <FaTrash />
-                </button>
-              </div>
-            </div>
-          ))}
+
+        {/* Teams List */}
+        <div className="mb-6">
+          <h3 className="text-2xl font-bold text-white mb-4">Teams</h3>
+          <input
+            type="text"
+            placeholder="Search teams by name or tag"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all mb-6"
+          />
         </div>
-      </div>
-    </>
+
+        {filteredTeams.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-800/50 mb-4">
+              <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-400 mb-2">No teams found</h3>
+            <p className="text-gray-500 mb-6">Create your first team to get started</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredTeams.map((team) => (
+              <div
+                key={team._id}
+                className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow flex flex-col"
+              >
+                {team.logo && (
+                  <img
+                    src={team.logo}
+                    alt={`${team.teamFullName} logo`}
+                    className="w-20 h-20 object-contain mb-3 mx-auto rounded-lg"
+                    loading="lazy"
+                  />
+                )}
+                <h4 className="font-bold text-white text-center text-lg mb-1">
+                  {team.teamFullName}
+                </h4>
+                <p className="text-purple-400 text-center text-sm mb-4">({team.teamTag})</p>
+
+                <div className="w-full mt-2 flex-grow">
+                  <h5 className="font-semibold text-gray-300 text-sm mb-2">Players</h5>
+                  {team.players.length === 0 ? (
+                    <p className="text-gray-500 text-sm">No players</p>
+                  ) : (
+                    <ul className="text-sm space-y-2">
+                      {team.players.map((player) => (
+                        <li key={player._id || player.playerName} className="flex justify-between items-center">
+                          <div className="flex items-center gap-2 flex-grow">
+                            <input
+                              type="checkbox"
+                              checked={selectedPlayersPerTeam[team._id]?.has(player._id!) || false}
+                              onChange={() => {
+                                setSelectedPlayersPerTeam((prev) => {
+                                  const teamSet = new Set(prev[team._id] || []);
+                                  if (teamSet.has(player._id!)) teamSet.delete(player._id!);
+                                  else teamSet.add(player._id!);
+                                  return { ...prev, [team._id]: teamSet };
+                                });
+                              }}
+                              className="rounded border-slate-600"
+                            />
+                            {player.photo && (
+                              <img
+                                src={player.photo}
+                                alt={player.playerName}
+                                className="w-6 h-6 rounded-full object-cover"
+                                loading="lazy"
+                              />
+                            )}
+                            <span className="text-gray-300">
+                              <strong className="text-white">{player.playerName}</strong>
+                              {player.playerId && <span className="text-gray-500 text-xs"> ({player.playerId})</span>}
+                            </span>
+                          </div>
+                          {player._id && (
+                            <button
+                              onClick={() => deletePlayer(team._id, player._id!)}
+                              className="text-red-400 hover:text-red-300 transition-colors"
+                              title="Delete Player"
+                              disabled={deletingPlayerIds.has(player._id!)}
+                            >
+                              <FaTrash size={14} />
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {selectedPlayersPerTeam[team._id]?.size > 0 && (
+                    <button
+                      onClick={() => deleteSelectedPlayers(team._id)}
+                      className="bg-red-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-red-700 transition-colors mt-3 w-full text-sm"
+                    >
+                      Delete Selected ({selectedPlayersPerTeam[team._id].size})
+                    </button>
+                  )}
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-slate-700/50 flex gap-2">
+                  <button
+                    onClick={() => startEditTeam(team)}
+                    className="flex-1 bg-blue-600 px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-white font-medium text-sm"
+                    aria-label={`Edit team ${team.teamFullName}`}
+                  >
+                    <FaEdit className="inline mr-1" /> Edit
+                  </button>
+                  <button
+                    onClick={() => deleteTeam(team._id)}
+                    className="flex-1 bg-red-600 px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-white font-medium text-sm"
+                    aria-label={`Delete team ${team.teamFullName}`}
+                    disabled={deletingTeamIds.has(team._id)}
+                  >
+                    <FaTrash className="inline mr-1" /> Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
   );
 };
 
