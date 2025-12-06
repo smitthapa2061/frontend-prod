@@ -546,19 +546,13 @@ const MatchFragrs: React.FC<MatchFragrsProps> = ({ tournament, round, match, mat
                    
 
                     {/* Stats */}
-                    <div className="grid grid-cols-3  text-[2rem] w-full text-center absolute top-[330px] font-bebas  font-[500] bg-[#00000099]">
+                    <div className=" text-[2rem] w-full text-center absolute top-[330px] font-bebas  font-[500] bg-[#00000099] flex justify-center">
                       <div>
-                        <div className="text-yellow-400  text-[3rem] ">{player.killNum}</div>
-                        <div className="text-white mt-[-20px]">KILLS</div>
+                        <div className="text-yellow-400  text-[4rem] ">{player.killNum} <span className='text-white'>KILLS</span></div>
+                   
                       </div>
-                      <div>
-                        <div className="text-yellow-400 text-[3rem]  ">{player.numericDamage}</div>
-                        <div className="text-white  mt-[-20px]">DAMAGE</div>
-                      </div>
-                      <div>
-                        <div className="text-yellow-400  text-[3rem] ">{player.assists}</div>
-                        <div className="text-white mt-[-20px] ">ASSISTS</div>
-                      </div>
+                    
+                    
                     </div>
 
                     {/* Contribution */}

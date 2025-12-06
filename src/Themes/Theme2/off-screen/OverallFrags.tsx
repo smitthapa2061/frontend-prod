@@ -296,7 +296,7 @@ const OverallFrags: React.FC<OverallFragsProps> = ({ tournament, round }) => {
                   {/* Player Avatar */}
                   <div className="w-[300px] h-[300px] ml-[0px] absolute z-0">
                     <img
-                      src={player.picUrl || 'https://res.cloudinary.com/dqckienxj/image/upload/v1735718663/defult_chach_apsjhc_jydubc.png'}
+                      src={player.picUrl || 'https://res.cloudinary.com/dqckienxj/image/upload/v1761358753/defplayer_m7qexs.png'}
                       alt={player.playerName}
                       className="w-full h-full "
                     />
@@ -309,19 +309,12 @@ const OverallFrags: React.FC<OverallFragsProps> = ({ tournament, round }) => {
                   </div>
 
                   {/* Stats */}
-                  <div className="grid grid-cols-3 text-[2rem] w-full text-center absolute top-[330px] font-bebas font-[500] bg-[#00000099]">
+                  <div className=" text-[2rem] w-full text-center absolute top-[330px] font-bebas font-[500] bg-[#00000099] flex justify-center">
                     <div>
-                      <div className="text-yellow-400 text-[3rem] ">{player.killNum}</div>
-                      <div className="text-white mt-[-20px]">KILLS</div>
+                      <div className="text-yellow-400 text-[4rem] ">{player.killNum} <span className='text-white'> KILLS </span></div>
+               
                     </div>
-                    <div>
-                      <div className="text-yellow-400 text-[3rem] ">{player.numericDamage}</div>
-                      <div className="text-white mt-[-20px]">DAMAGE</div>
-                    </div>
-                    <div>
-                      <div className="text-yellow-400 text-[3rem] ">{player.assists}</div>
-                      <div className="text-white mt-[-20px]">ASSISTS</div>
-                    </div>
+                  
                   </div>
 
                   {/* K/D Ratio */}

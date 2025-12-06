@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FaTrash, FaEdit } from 'react-icons/fa';
-import Group from './GroupsData.tsx';
+import Group, { GroupRef } from './GroupsData.tsx';
 import api from '../login/api.tsx';
 import { socket } from './socket.tsx';
 
@@ -21,6 +21,7 @@ const Round: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const cacheKey = tournamentId ? `rounds-${tournamentId}` : 'rounds-user';
+  const groupRef = useRef<GroupRef>(null);
 
   // Modal & form states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -151,153 +152,204 @@ const Round: React.FC = () => {
     }
   };
 
-  if (loading) return <p>Loading rounds...</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
+          <p className="text-purple-400 font-medium animate-pulse text-lg">Loading Rounds...</p>
+        </div>
+      </div>
+    );
+  }
   if (error) return <p>Error: {error}</p>;
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <button
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-6"
-        onClick={openAddModal}
-      >
-        Add Round
-      </button>
-
-      <Group />
-
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
-          <form
-            onSubmit={handleAddRound}
-            className="bg-white p-6 rounded shadow w-96"
-          >
-            <h3 className="text-lg font-semibold mb-2">Add New Round</h3>
-            <input
-              type="text"
-              placeholder="Round Name"
-              value={roundName}
-              onChange={e => setRoundName(e.target.value)}
-              className="p-2 border rounded w-full mb-2"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Day"
-              value={day}
-              onChange={e => setDay(e.target.value)}
-              className="p-2 border rounded w-full mb-2"
-            />
-            <label className="block mb-2 font-bold text-red-500">
-              <input
-                type="checkbox"
-                checked={apiEnable}
-                onChange={e => setApiEnable(e.target.checked)}
-                className="mr-2 scale-125"
-              />
-              ENABLE API FOR THIS ROUND
-            </label>
-            <div className="flex justify-between mt-4">
-              <button
-                type="button"
-                className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-600"
-                onClick={closeAddModal}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-              >
-                Save
-              </button>
-            </div>
-          </form>
+    <div className="min-h-screen p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white font-sans">
+      <div className="relative z-10 max-w-5xl mx-auto pt-8">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-3xl font-bold tracking-tight text-white">Tournament Rounds</h2>
+          <div className="flex gap-3">
+            <button
+              className="px-6 py-3 rounded-lg text-white font-medium shadow-lg transition-all bg-blue-600 hover:bg-blue-700"
+              onClick={() => groupRef.current?.openForm()}
+            >
+              <span className="text-xl mr-2">+</span> Add Group
+            </button>
+            <button
+              className="px-6 py-3 rounded-lg text-white font-medium shadow-lg transition-all bg-purple-600 hover:bg-purple-700"
+              onClick={openAddModal}
+            >
+              <span className="text-xl mr-2">+</span> Add Round
+            </button>
+          </div>
         </div>
-      )}
 
-      <ul className="space-y-3">
-        {rounds.map(round => (
-          <li
-            key={round._id}
-            className="p-4 border rounded bg-gray-50 flex justify-between items-center"
-          >
-            {editRoundId === round._id ? (
-              <div className="flex-1 flex flex-col space-y-2">
-                <input
-                  type="text"
-                  value={editRoundName}
-                  onChange={e => setEditRoundName(e.target.value)}
-                  className="p-2 border rounded w-full"
-                />
-                <input
-                  type="text"
-                  value={editDay}
-                  onChange={e => setEditDay(e.target.value)}
-                  className="p-2 border rounded w-full"
-                />
-                <label className="block mb-2 font-bold text-red-500">
+        <Group ref={groupRef} />
+
+        {/* Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+            <form onSubmit={handleAddRound} className="bg-slate-800 border border-slate-700 p-8 rounded-xl shadow-2xl w-full max-w-md relative overflow-hidden">
+              <h3 className="text-xl font-bold mb-6 text-white">Add New Round</h3>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1.5 ml-1">Round Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Grand Finals"
+                    value={roundName}
+                    onChange={e => setRoundName(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1.5 ml-1">Day</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Day 1"
+                    value={day}
+                    onChange={e => setDay(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <label className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-lg cursor-pointer hover:bg-red-500/20 transition-colors group">
                   <input
                     type="checkbox"
-                    checked={editApiEnable}
-                    onChange={e => setEditApiEnable(e.target.checked)}
-                    className="mr-2 scale-125"
+                    checked={apiEnable}
+                    onChange={e => setApiEnable(e.target.checked)}
+                    className="w-5 h-5 rounded border-gray-600 text-red-600 focus:ring-red-500 bg-slate-900/50"
                   />
-                  ENABLE API FOR THIS ROUND
+                  <span className="font-bold text-red-400 group-hover:text-red-300 transition-colors">ENABLE API FOR THIS ROUND</span>
                 </label>
-                <div className="flex space-x-2 mt-2">
-                  <button
-                    className="bg-green-600 text-white px-4 py-2 rounded"
-                    onClick={() => handleUpdate(round._id)}
-                  >
-                    Save
-                  </button>
-                  <button
-                    className="bg-gray-400 text-white px-4 py-2 rounded"
-                    onClick={() => setEditRoundId(null)}
-                  >
-                    Cancel
-                  </button>
-                </div>
               </div>
-            ) : (
-              <>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold">
-                    {tournamentId ? (
-                      <Link
-                        to={`/tournaments/${tournamentId}/rounds/${round._id}/matches`}
-                        className="text-blue-600 hover:underline"
-                      >
-                        Round {round.roundNumber}: {round.roundName}
-                      </Link>
-                    ) : (
-                      <span>Round {round.roundNumber}: {round.roundName}</span>
-                    )}
-                  </h3>
-                  <p className="text-sm text-gray-600">Day: {round.day}</p>
-                  <p className="text-sm text-green-600">
-                    API Enabled: {round.apiEnable ? 'Yes' : 'No'}
-                  </p>
+
+              <div className="flex gap-3 mt-8">
+                <button
+                  type="button"
+                  className="flex-1 px-4 py-3 rounded-lg font-medium text-gray-300 bg-slate-700 hover:bg-slate-600 transition-colors"
+                  onClick={closeAddModal}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-3 rounded-lg font-medium text-white bg-purple-600 hover:bg-purple-700 shadow-lg transition-all"
+                >
+                  Save Round
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        <ul className="space-y-4 pb-12">
+          {rounds.map(round => (
+            <li key={round._id} className="group relative bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 hover:border-slate-600/50 rounded-xl p-5 transition-all duration-200 backdrop-blur-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5">
+              {editRoundId === round._id ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-gray-500 ml-1 mb-1 block">Name</label>
+                      <input
+                        type="text"
+                        value={editRoundName}
+                        onChange={e => setEditRoundName(e.target.value)}
+                        className="w-full px-4 py-2 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white focus:ring-2 focus:ring-purple-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 ml-1 mb-1 block">Day</label>
+                      <input
+                        type="text"
+                        value={editDay}
+                        onChange={e => setEditDay(e.target.value)}
+                        className="w-full px-4 py-2 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white focus:ring-2 focus:ring-purple-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-red-400 font-bold p-2 bg-red-500/5 rounded-lg border border-red-500/10">
+                    <input
+                      type="checkbox"
+                      checked={editApiEnable}
+                      onChange={e => setEditApiEnable(e.target.checked)}
+                      className="w-4 h-4 rounded bg-slate-900/50 border-gray-600 text-red-600 focus:ring-red-500"
+                    />
+                    ENABLE API
+                  </label>
+                  <div className="flex gap-2 justify-end pt-2">
+                    <button
+                      className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-medium transition-colors shadow-lg shadow-green-900/20"
+                      onClick={() => handleUpdate(round._id)}
+                    >
+                      Save Changes
+                    </button>
+                    <button
+                      className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-gray-300 font-medium transition-colors"
+                      onClick={() => setEditRoundId(null)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <FaEdit
-                    className="cursor-pointer text-blue-600 hover:text-blue-800"
-                    title="Edit Round"
-                    size={30}
-                    onClick={() => handleEditClick(round)}
-                  />
-                  <FaTrash
-                    className="cursor-pointer text-red-600 hover:text-red-800"
-                    title="Delete Round"
-                    size={30}
-                    onClick={() => handleDelete(round._id)}
-                  />
+              ) : (
+                <div className="flex justify-between items-center">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-white mb-1.5">
+                      {tournamentId ? (
+                        <Link
+                          to={`/tournaments/${tournamentId}/rounds/${round._id}/matches`}
+                          className="hover:text-purple-400 transition-colors flex items-center gap-3"
+                        >
+                          <span className="px-2.5 py-0.5 rounded-md bg-purple-500/20 text-purple-400 text-sm font-mono border border-purple-500/30">#{round.roundNumber}</span>
+                          {round.roundName}
+                        </Link>
+                      ) : (
+                        <span className="flex items-center gap-3">
+                          <span className="px-2.5 py-0.5 rounded-md bg-purple-500/20 text-purple-400 text-sm font-mono border border-purple-500/30">#{round.roundNumber}</span>
+                          {round.roundName}
+                        </span>
+                      )}
+                    </h3>
+                    <div className="flex items-center gap-4 text-sm text-gray-400 ml-1">
+                      <span className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        {round.day || 'No Day Set'}
+                      </span>
+                      {round.apiEnable && (
+                        <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-500/10 text-green-400 border border-green-500/20">
+                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                          API ACTIVE
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-4 group-hover:translate-x-0">
+                    <button
+                      onClick={() => handleEditClick(round)}
+                      className="p-2 rounded-lg bg-blue-600/80 hover:bg-blue-600 text-white transition-colors"
+                      title="Edit"
+                    >
+                      <FaEdit size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(round._id)}
+                      className="p-2 rounded-lg bg-red-600/80 hover:bg-red-600 text-white transition-colors"
+                      title="Delete"
+                    >
+                      <FaTrash size={16} />
+                    </button>
+                  </div>
                 </div>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };

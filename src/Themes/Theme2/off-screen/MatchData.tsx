@@ -168,7 +168,7 @@ const rightTeams = pageTeams.slice(pageMid);
         {/* Team Name */}
 <div className="w-[100%] absolute  flex justify-center">
  
-  {topTeam.placePoints === 10 && (   // 👈 show only if placePoints is 10
+  {topTeam.placePoints === 12 && (   // 👈 show only if placePoints is 10
     <img
       src="https://res.cloudinary.com/dqckienxj/image/upload/v1753019880/roast-chicken_oyt00t.png"
       alt="Chicken Icon"
@@ -250,7 +250,7 @@ const rightTeams = pageTeams.slice(pageMid);
           }}
           className='w-[250px] h-[100%] items-center flex pl-[10px] font-bebas text-white'>
           {team.teamTag}
-            {team.placePoints === 10 && (
+            {team.placePoints === 12 && (
             <img
               src="https://res.cloudinary.com/dqckienxj/image/upload/v1753019880/roast-chicken_oyt00t.png"
               alt="Chicken Icon"
@@ -322,7 +322,7 @@ const rightTeams = pageTeams.slice(pageMid);
           }}
           className='w-[250px] h-[100%] items-center flex pl-[10px] font-bebas text-white'>
           {team.teamTag}
-            {team.placePoints === 10 && (
+            {team.placePoints === 12 && (
             <img
               src="https://res.cloudinary.com/dqckienxj/image/upload/v1753019880/roast-chicken_oyt00t.png"
               alt="Chicken Icon"

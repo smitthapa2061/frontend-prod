@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import api from '../login/api.tsx';
-import Polling from "./isPolling.tsx"
+
 import { FaDiscord, FaWhatsapp } from 'react-icons/fa';
 
 interface Tournament {
@@ -87,7 +87,7 @@ const DisplayHud: React.FC = () => {
   useEffect(() => {
     try {
       localStorage.setItem('selectedThemeMap', JSON.stringify(selectedThemeMap));
-    } catch {}
+    } catch { }
   }, [selectedThemeMap]);
 
   // Helper to open the match data viewer for a given graphic
@@ -156,6 +156,11 @@ const DisplayHud: React.FC = () => {
     checked: boolean
   ) => {
     const key = `${tournamentId}_${roundId}`;
+
+    // Optimistic update: Update local state immediately
+    const previousSelectedMatches = { ...selectedMatches };
+    setSelectedMatches(prev => ({ ...prev, [key]: checked ? matchId : null }));
+
     try {
       const res = await api.post('/matchSelection/select', {
         tournamentId,
@@ -163,17 +168,26 @@ const DisplayHud: React.FC = () => {
         matchId
       });
 
-      // Backend returns deselected if user unselected
+      // Backend returns deselected if user unselected - verify consistency
       if (res.data.deselected) {
-        setSelectedMatches(prev => ({ ...prev, [key]: null }));
+        if (checked) {
+          // If we tried to check but backend says deselected (e.g. toggle logic), sync with backend
+          setSelectedMatches(prev => ({ ...prev, [key]: null }));
+        }
       } else {
-        setSelectedMatches(prev => ({ ...prev, [key]: matchId }));
+        if (!checked) {
+          // If we tried to uncheck but backend says selected, sync with backend
+          setSelectedMatches(prev => ({ ...prev, [key]: matchId }));
+        }
       }
 
       // Force refresh the polling component when match changes
       setPollingKey(prev => prev + 1);
     } catch (err) {
       console.error('Error selecting/deselecting match:', err);
+      // Revert to previous state on error
+      setSelectedMatches(previousSelectedMatches);
+      alert('Failed to update match selection. Please try again.');
     }
   };
 
@@ -196,165 +210,202 @@ const DisplayHud: React.FC = () => {
   };
 
   return (
-    <div style={{ background: '#f9f9f9', color: '#333', minHeight: '100vh' }}>
-      <div className="bg-gray-800 text-white p-4 w-full h-[100px] flex flex-col items-center">
-        <div className="flex justify-between items-center space-x-5 mb-4 relative top-[10px] w-full">
-              <div className="absolute w-[60px] ml-[10px] mt-[5px]"><img src="https://res.cloudinary.com/dqckienxj/image/upload/v1760081339/scoresync_logo.jpg_hsz7qz.png" alt="logo" className="w-full h-full "/></div>
-          <div></div>
-          <div className="flex space-x-5 justify-center">
-            <button
-              onClick={() => (window.location.href = '/dashboard')}
-              className="bg-white text-black font-medium text-[1rem] rounded-xl px-6 py-2 border-2 border-transparent"
-            >
-              TOURNAMENTS
-            </button>
-            <button
-              onClick={() => window.open('/teams', '_blank', 'noopener,noreferrer')}
-              className="bg-white text-black font-medium text-[1rem] rounded-xl px-6 py-2 border-2 border-transparent cursor-pointer hover:bg-gray-200 transition"
-            >
-              ADD TEAMS
-            </button>
-            <button
-              onClick={() => window.open('/displayhud', '_blank', 'noopener,noreferrer')}
-              className="bg-white text-black font-medium text-[1rem] rounded-xl px-6 py-2 border-2 border-transparent cursor-pointer hover:bg-gray-200 transition"
-            >
-              DISPLAY HUD
-            </button>
-          </div>
-          <div className="text-right">
-            {user && <span className="font-bold font-mono font-300 text-[1rem] text-right">ADMIN:{user.username}</span>}
-            <div className="font-mono flex items-center ">HelpDesk<FaDiscord className="cursor-pointer  hover:text-red-700 text-[2rem] text-white" onClick={() => window.open('https://discord.com/channels/623776491682922526/1426117227257663558', '_blank')} /></div>
-           
-          </div>
-        </div>
-      </div>
-
-      <Polling key={pollingKey} />
-
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
-        {tournaments.map(t => (
-          <div key={t._id} style={{ marginBottom: '1rem', background: '#fff', borderRadius: '8px', boxShadow: '0 2px 6px rgba(0,0,0,0.05)', padding: '1rem' }}>
-            <div
-              onClick={() => toggleTournament(t._id)}
-              style={{ fontWeight: '600', fontSize: '1.2rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}
-            >
-              <span>{t.tournamentName}</span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+      {/* Header/Navigation Bar - Matching Dashboard */}
+      <header className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <img
+                src="https://res.cloudinary.com/dqckienxj/image/upload/v1760081339/scoresync_logo.jpg_hsz7qz.png"
+                alt="ScoreSync Logo"
+                className="w-12 h-12 rounded-lg shadow-lg"
+              />
+              <h1 className="text-xl font-bold text-white">ScoreSync</h1>
             </div>
 
-            {expandedTournaments.includes(t._id) && (
-              <div style={{ padding: '0.5rem 0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.5rem 0' }}>
-                  <span style={{ fontWeight: 600 }}>Theme:</span>
-                  <select
-                    value={getSelectedTheme(t._id)}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setSelectedThemeMap(prev => ({ ...prev, [t._id]: value }));
-                    }}
-                    style={{ padding: '0.3rem 0.5rem', borderRadius: '6px', border: '1px solid #ddd' }}
-                  >
-                    {availableThemes.map(th => (
-                      <option key={th} value={th}>{th}</option>
-                    ))}
-                  </select>
-                </div>
-                {roundsMap[t._id]?.length ? roundsMap[t._id].map(r => {
-                  const isRoundExpanded = expandedRounds[t._id] === r._id;
-                  const key = `${t._id}_${r._id}`;
-                  const selectedMatchId = selectedMatches[key];
+            {/* Navigation Buttons */}
+            <nav className="flex items-center gap-3">
+              <button
+                onClick={() => (window.location.href = '/dashboard')}
+                className="bg-slate-700 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-slate-600 transition-colors"
+              >
+                Tournaments
+              </button>
+              <button
+                onClick={() => window.open('/teams', '_blank', 'noopener,noreferrer')}
+                className="bg-slate-700 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-slate-600 transition-colors"
+              >
+                Add Teams
+              </button>
+              <button
+                onClick={() => window.open('/displayhud', '_blank', 'noopener,noreferrer')}
+                className="bg-purple-600 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Display HUD
+              </button>
+            </nav>
 
-                  return (
-                    <div key={r._id} style={{ marginBottom: '1rem' }}>
-                      <div
-                        onClick={() => toggleRound(t._id, r._id)}
-                        style={{ padding: '0.6rem 0.8rem', background: '#fff', borderRadius: '6px', boxShadow: '0 1px 4px rgba(0,0,0,0.05)', cursor: 'pointer', fontSize: '1rem', display: 'flex', justifyContent: 'space-between', userSelect: 'none', fontWeight: isRoundExpanded ? '700' : '500' }}
-                      >
-                        <span>{r.roundName}</span>
-                        <span style={{ fontSize: '0.85rem', color: '#666', fontWeight: '500' }}>Round Name</span>
-                      </div>
-
-                      {isRoundExpanded && matchesMap[key]?.length > 0 && (
-                        <div style={{ marginTop: '0.5rem', paddingLeft: '1rem' }}>
-                          {/* Regular match selection */}
-                          <div style={{ marginBottom: '1rem' }}>
-                            <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Select Match for Live Views:</div>
-                            {matchesMap[key].map((m, index) => (
-                              <label key={m._id} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 0.8rem', background: '#f1f1f1', borderRadius: '4px', marginBottom: '0.3rem', fontSize: '0.95rem', cursor: 'pointer', userSelect: 'none' }}>
-                                <input
-                                  type="checkbox"
-                                  checked={selectedMatchId === m._id}
-                                  onChange={e => onMatchCheckboxChange(t._id, r._id, m._id, e.target.checked)}
-                                  style={{ marginRight: '0.8rem', cursor: 'pointer' }}
-                                />
-                                {m.matchName || `Match ${index + 1}`}
-                              </label>
-                            ))}
-                          </div>
-
-                          {/* Schedule match selection */}
-                          <div>
-                            <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Select Matches for Schedule View:</div>
-                            {matchesMap[key].map((m, index) => (
-                              <label key={`schedule-${m._id}`} style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 0.8rem', background: '#e8f4fd', borderRadius: '4px', marginBottom: '0.3rem', fontSize: '0.95rem', cursor: 'pointer', userSelect: 'none' }}>
-                                <input
-                                  type="checkbox"
-                                  checked={(selectedScheduleMatches[key] || []).includes(m._id)}
-                                  onChange={e => onScheduleMatchCheckboxChange(t._id, r._id, m._id, e.target.checked)}
-                                  style={{ marginRight: '0.8rem', cursor: 'pointer' }}
-                                />
-                                {m.matchName || `Match ${index + 1}`}
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {isRoundExpanded && matchesMap[key]?.length === 0 && (
-                        <div style={{ marginTop: '0.5rem', paddingLeft: '1rem', color: '#999' }}>No matches available</div>
-                      )}
-
-                      {isRoundExpanded && (
-                        <div style={{ marginTop: '0.8rem' }}>
-                          <div style={{ marginBottom: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
-                            Selected match: {selectedMatchId ? (matchesMap[key]?.find((m2: any) => m2._id === selectedMatchId)?.matchName || `Match ${(matchesMap[key]?.find((m2: any) => m2._id === selectedMatchId)?.matchNo || matchesMap[key]?.find((m2: any) => m2._id === selectedMatchId)?._matchNo) || 'N/A'}`) : 'None'}
-                          </div>
-                          <div style={{ marginBottom: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
-                            Selected schedule matches: {(selectedScheduleMatches[key] || []).length > 0 ? (selectedScheduleMatches[key] || []).map(matchId => matchesMap[key]?.find((m2: any) => m2._id === matchId)?.matchName || `Match ${(matchesMap[key]?.find((m2: any) => m2._id === matchId)?.matchNo || matchesMap[key]?.find((m2: any) => m2._id === matchId)?._matchNo) || 'N/A'}`).join(', ') : 'None'}
-                          </div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                            {['MatchSummary','Lower','Upper','Dom','LiveStats','LiveFrags','Alerts','MatchData','MatchFragrs','CommingUpNext','OverAllData','OverallFrags','WwcdStats','WwcdSummary','playerH2H','TeamH2H','Champions','1stRunnerUp','2ndRunnerUp','EventMvp','ZoneClose','intro','mapPreview'].map((viewName) => (
-                              <button
-                                key={viewName}
-                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={!selectedMatchId}
-                                onClick={() =>
-                                  selectedMatchId && openMatchDataViewer(t._id, r._id, selectedMatchId as string, getSelectedTheme(t._id), viewName)
-                                }
-                              >
-                                {viewName}
-                              </button>
-                            ))}
-                            <button
-                              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                              disabled={(selectedScheduleMatches[key] || []).length === 0}
-                              onClick={() =>
-                                openScheduleViewer(t._id, r._id, selectedScheduleMatches[key] || [], getSelectedTheme(t._id))
-                              }
-                            >
-                              Schedule ({(selectedScheduleMatches[key] || []).length})
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                }) : <div style={{ padding: '0.5rem', fontSize: '0.9rem', color: '#777' }}>No rounds available</div>}
+            {/* User Info */}
+            <div className="flex items-center gap-4">
+              {user && (
+                <span className="text-sm text-gray-300 font-medium">
+                  Admin: <span className="text-white">{user.username}</span>
+                </span>
+              )}
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <span>Help Desk</span>
+                <FaDiscord
+                  className="cursor-pointer text-2xl text-gray-300 hover:text-purple-400 transition-colors"
+                  onClick={() => window.open('https://discord.com/channels/623776491682922526/1426117227257663558', '_blank')}
+                />
               </div>
-            )}
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      </header>
+
+
+      <main className="max-w-4xl mx-auto px-6 py-8">
+        <h2 className="text-3xl font-bold text-white mb-8 text-center">Tournament Control Center</h2>
+
+        <div className="space-y-4">
+          {tournaments.map(t => (
+            <div key={t._id} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all">
+              <div
+                onClick={() => toggleTournament(t._id)}
+                className="p-4 flex justify-between items-center cursor-pointer hover:bg-slate-700/30 transition-colors"
+              >
+                <span className="text-xl font-bold text-white">{t.tournamentName}</span>
+                <span className="text-gray-400 text-sm">{expandedTournaments.includes(t._id) ? 'Collapse' : 'Expand'}</span>
+              </div>
+
+              {expandedTournaments.includes(t._id) && (
+                <div className="p-4 border-t border-slate-700/50 bg-slate-900/30">
+                  <div className="flex items-center gap-3 mb-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700/30">
+                    <span className="font-semibold text-gray-300">Theme:</span>
+                    <select
+                      value={getSelectedTheme(t._id)}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setSelectedThemeMap(prev => ({ ...prev, [t._id]: value }));
+                      }}
+                      className="bg-slate-900 border border-slate-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block p-2.5"
+                    >
+                      {availableThemes.map(th => (
+                        <option key={th} value={th}>{th}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-3">
+                    {roundsMap[t._id]?.length ? roundsMap[t._id].map(r => {
+                      const isRoundExpanded = expandedRounds[t._id] === r._id;
+                      const key = `${t._id}_${r._id}`;
+                      const selectedMatchId = selectedMatches[key];
+
+                      return (
+                        <div key={r._id} className="border border-slate-700/50 rounded-lg overflow-hidden">
+                          <div
+                            onClick={() => toggleRound(t._id, r._id)}
+                            className={`p-3 flex justify-between items-center cursor-pointer transition-colors ${isRoundExpanded ? 'bg-slate-700/50' : 'bg-slate-800/30 hover:bg-slate-700/30'}`}
+                          >
+                            <span className={`font-medium ${isRoundExpanded ? 'text-purple-400' : 'text-gray-200'}`}>{r.roundName}</span>
+                            <span className="text-xs text-gray-500">Round</span>
+                          </div>
+
+                          {isRoundExpanded && matchesMap[key]?.length > 0 && (
+                            <div className="p-4 bg-slate-900/50 border-t border-slate-700/50">
+                              {/* Regular match selection */}
+                              <div className="mb-6">
+                                <div className="font-semibold text-purple-400 mb-3 text-sm uppercase tracking-wider">Select Match for Live Views</div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {matchesMap[key].map((m, index) => (
+                                    <label key={m._id} className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${selectedMatchId === m._id ? 'bg-purple-900/30 border-purple-500/50' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-700/50'}`}>
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedMatchId === m._id}
+                                        onChange={e => onMatchCheckboxChange(t._id, r._id, m._id, e.target.checked)}
+                                        className="w-4 h-4 text-purple-600 bg-slate-700 border-slate-600 rounded focus:ring-purple-600 focus:ring-2"
+                                      />
+                                      <span className="ml-3 text-sm font-medium text-gray-200">{m.matchName || `Match ${index + 1}`}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Schedule match selection */}
+                              <div className="mb-6">
+                                <div className="font-semibold text-blue-400 mb-3 text-sm uppercase tracking-wider">Select Matches for Schedule View</div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {matchesMap[key].map((m, index) => (
+                                    <label key={`schedule-${m._id}`} className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${(selectedScheduleMatches[key] || []).includes(m._id) ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-700/50'}`}>
+                                      <input
+                                        type="checkbox"
+                                        checked={(selectedScheduleMatches[key] || []).includes(m._id)}
+                                        onChange={e => onScheduleMatchCheckboxChange(t._id, r._id, m._id, e.target.checked)}
+                                        className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-600 focus:ring-2"
+                                      />
+                                      <span className="ml-3 text-sm font-medium text-gray-200">{m.matchName || `Match ${index + 1}`}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {isRoundExpanded && matchesMap[key]?.length === 0 && (
+                            <div className="p-4 text-center text-gray-500 italic bg-slate-900/50 border-t border-slate-700/50">No matches available</div>
+                          )}
+
+                          {isRoundExpanded && (
+                            <div className="p-4 bg-slate-800/30 border-t border-slate-700/50">
+                              <div className="mb-4 p-3 bg-slate-900/50 rounded-lg border border-slate-700/30">
+                                <div className="text-sm text-gray-400 mb-1">
+                                  <span className="font-semibold text-purple-400">Live Match:</span> {selectedMatchId ? (matchesMap[key]?.find((m2: any) => m2._id === selectedMatchId)?.matchName || `Match ${(matchesMap[key]?.find((m2: any) => m2._id === selectedMatchId)?.matchNo || matchesMap[key]?.find((m2: any) => m2._id === selectedMatchId)?._matchNo) || 'N/A'}`) : 'None'}
+                                </div>
+                                <div className="text-sm text-gray-400">
+                                  <span className="font-semibold text-blue-400">Schedule:</span> {(selectedScheduleMatches[key] || []).length > 0 ? (selectedScheduleMatches[key] || []).map(matchId => matchesMap[key]?.find((m2: any) => m2._id === matchId)?.matchName || `Match ${(matchesMap[key]?.find((m2: any) => m2._id === matchId)?.matchNo || matchesMap[key]?.find((m2: any) => m2._id === matchId)?._matchNo) || 'N/A'}`).join(', ') : 'None'}
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2">
+                                {['MatchSummary', 'Lower', 'Upper', 'Dom', 'LiveStats', 'LiveFrags', 'Alerts', 'MatchData', 'MatchFragrs', 'CommingUpNext', 'OverAllData', 'OverallFrags', 'WwcdStats', 'WwcdSummary', 'playerH2H', 'TeamH2H', 'Champions', '1stRunnerUp', '2ndRunnerUp', 'EventMvp', 'ZoneClose', 'intro', 'mapPreview'].map((viewName) => (
+                                  <button
+                                    key={viewName}
+                                    className="bg-slate-700 hover:bg-purple-600 text-white text-xs font-medium px-3 py-2 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-slate-600 hover:border-purple-500"
+                                    disabled={!selectedMatchId}
+                                    onClick={() =>
+                                      selectedMatchId && openMatchDataViewer(t._id, r._id, selectedMatchId as string, getSelectedTheme(t._id), viewName)
+                                    }
+                                  >
+                                    {viewName}
+                                  </button>
+                                ))}
+                                <button
+                                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-3 py-2 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-900/20"
+                                  disabled={(selectedScheduleMatches[key] || []).length === 0}
+                                  onClick={() =>
+                                    openScheduleViewer(t._id, r._id, selectedScheduleMatches[key] || [], getSelectedTheme(t._id))
+                                  }
+                                >
+                                  Schedule ({(selectedScheduleMatches[key] || []).length})
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }) : <div className="text-center py-4 text-gray-500 italic">No rounds available</div>}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </main>
     </div>
   );
 };

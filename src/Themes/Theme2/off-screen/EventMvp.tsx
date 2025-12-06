@@ -156,7 +156,7 @@ const EventMvp: React.FC<EventMvpProps> = ({ tournament, round }) => {
       {/* MVP Player Image in Center */}
       <div className="flex justify-center items-center relative top-[120px]">
         <img
-          src={mvp.picUrl || 'https://res.cloudinary.com/dqckienxj/image/upload/v1735718663/defult_chach_apsjhc_jydubc.png'}
+          src={mvp.picUrl || 'https://res.cloudinary.com/dqckienxj/image/upload/v1761358753/defplayer_m7qexs.png'}
           alt={mvp.playerName}
           className="h-[900px] object-contain"
         />
@@ -170,7 +170,7 @@ const EventMvp: React.FC<EventMvpProps> = ({ tournament, round }) => {
           }}
           className="w-full h-[40%] absolute top-[900px] z-10">
 
-          <div className='absolute top-[30px] left-[70px]'>
+          <div className='absolute top-[30px] left-[850px]'>
             <div className='bg-white w-[400px] h-[100px] skew-x-[20deg]'>
               <div className='bg-black w-[40%] h-full'></div>
             </div>
@@ -178,29 +178,10 @@ const EventMvp: React.FC<EventMvpProps> = ({ tournament, round }) => {
             <div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[200px] text-black'>{mvp.killNum || 0}</div>
           </div>
 
-          <div className='absolute top-[30px] left-[530px]'>
-            <div className='bg-white w-[400px] h-[100px] skew-x-[20deg]'>
-              <div className='bg-black w-[40%] h-full'></div>
-            </div>
-            <div className='font-bebas font-[300] text-[3rem] absolute top-[20px] left-[20px]'>DAMAGE</div>
-            <div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[200px] text-black'>{(mvp as any).numericDamage || 0}</div>
-          </div>
+        
+          
 
-          <div className='absolute top-[30px] left-[1000px]'>
-            <div className='bg-white w-[400px] h-[100px] skew-x-[20deg]'>
-              <div className='bg-black w-[40%] h-full'></div>
-            </div>
-            <div className='font-bebas font-[300] text-[2.5rem] absolute top-[25px] left-[10px]'>KNOCKOUTS</div>
-            <div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[200px] text-black'>{(mvp as any).knockouts || 0}</div>
-          </div>
-
-          <div className='absolute top-[30px] left-[1450px]'>
-            <div className='bg-white w-[400px] h-[100px] skew-x-[20deg]'>
-              <div className='bg-black w-[40%] h-full'></div>
-            </div>
-            <div className='font-bebas font-[300] text-[3rem] absolute top-[20px] left-[20px]'>ASSISTS</div>
-            <div className='font-bebas font-[300] text-[4rem] absolute top-[10px] left-[200px] text-black'>{mvp.assists || 0}</div>
-          </div>
+        
         </div>
       </div>
     </div>

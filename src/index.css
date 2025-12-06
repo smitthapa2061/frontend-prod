@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent white flash during page loads */
+html,
+body,
+#root {
+
+    /* slate-900 */
+    min-height: 100vh;
+}
+
+/* Smooth font rendering */
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
 @layer utilities {
 
     /* Blob animation for floating orbs */

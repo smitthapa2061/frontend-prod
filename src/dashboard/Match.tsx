@@ -110,6 +110,8 @@ const Match: React.FC = () => {
     fetchData();
   }, [tournamentId, roundId]);
 
+  const [isCreating, setIsCreating] = useState(false);
+
   // ----- Add Match -----
   const handleAddMatch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,6 +119,7 @@ const Match: React.FC = () => {
     if (!newTime) return alert('Please enter a valid time.');
     if (selectedGroupIds.length === 0) return alert('Select at least one group.');
 
+    setIsCreating(true);
     try {
       const res = await api.post(`/tournaments/${tournamentId}/rounds/${roundId}/matches`, {
         matchNo: newMatchNo,
@@ -143,6 +146,8 @@ const Match: React.FC = () => {
       setShowAddForm(false);
     } catch (err: any) {
       alert(err.message || 'Error adding match');
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -163,6 +168,7 @@ const Match: React.FC = () => {
         matchNo: editMatchNo,
         time: editTime,
         map: editMap.trim(),
+        groupIds: selectedGroupIds, // Assuming groups might be editable in future, but keeping simple for now
       });
 
       setMatches((prev) => {
@@ -194,220 +200,273 @@ const Match: React.FC = () => {
     }
   };
 
-  if (loading) return <p>Loading matches...</p>;
-  if (error) return <p className="text-red-600 font-semibold">Error: {error}</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
+          <p className="text-purple-400 font-medium animate-pulse text-lg">Loading Matches...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
+      <p className="text-red-500 font-semibold text-xl">Error: {error}</p>
+    </div>
+  );
 
   return (
-    <div className="p-6 max-w-3xl mx-auto bg-white rounded shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-center">Matches for Round</h2>
+    <div className="min-h-screen p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white font-sans">
+      <div className="max-w-5xl mx-auto pt-8">
 
-      <div className="mb-6 text-center">
-        <button
-          type="button"
-          onClick={() => setShowAddForm((prev) => !prev)}
-          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-          aria-expanded={showAddForm}
-          aria-controls="add-match-form"
-        >
-          {showAddForm ? 'Close Form' : 'Add Match'}
-        </button>
-      </div>
-
-      {showAddForm && (
-        <form
-          onSubmit={handleAddMatch}
-          id="add-match-form"
-          className="mb-8 p-6 border rounded-lg bg-gray-50 shadow-sm max-w-md mx-auto"
-        >
-          <h3 className="text-xl font-semibold mb-4 text-center">Add New Match</h3>
-
-          <label htmlFor="newMatchNo" className="block mb-2 font-medium">
-            Match Number
-          </label>
-          <input
-            id="newMatchNo"
-            type="number"
-            min={1}
-            value={newMatchNo}
-            onChange={(e) => setNewMatchNo(parseInt(e.target.value) || 1)}
-            className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-            required
-          />
-
-          <label htmlFor="newTime" className="block mb-2 font-medium">
-            Match Time (24-hour format)
-          </label>
-          <input
-            id="newTime"
-            type="time"
-            value={newTime}
-            onChange={(e) => setNewTime(e.target.value)}
-            className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-            required
-          />
-
-          <label htmlFor="newMap" className="block mb-2 font-medium">
-            Map Name
-          </label>
-          <select
-            id="newMap"
-            value={newMap}
-            onChange={(e) => setNewMap(e.target.value)}
-            className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-            required
-          >
-            <option value="">Select a map</option>
-            <option value="Erangel">Erangel</option>
-            <option value="Miramar">Miramar</option>
-            <option value="Sanhok">Sanhok</option>
-            <option value="Rondo">Rondo</option>
-             <option value="Bermuda">Bermuda</option>
-                           <option value="Alpine">Alpine</option>
-                              <option value="Nexterra">nexterra</option>
-                                     <option value="Purgatory">Purgatory</option>
-                                       <option value="Kalahari">Kalahari</option>
-          </select>
-
-          <div className="mb-4">
-            <p className="font-medium mb-2">Select Groups:</p>
-            {groups.map((group) => (
-              <label key={group._id} className="flex items-center mb-1 cursor-pointer">
-                <input
-                  type="checkbox"
-                  value={group._id}
-                  checked={selectedGroupIds.includes(group._id)}
-                  onChange={() => {
-                    if (selectedGroupIds.includes(group._id)) {
-                      setSelectedGroupIds(selectedGroupIds.filter((id) => id !== group._id));
-                    } else {
-                      setSelectedGroupIds([...selectedGroupIds, group._id]);
-                    }
-                  }}
-                  className="mr-2"
-                />
-                {group.groupName}
-              </label>
-            ))}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-white">Matches</h2>
+            <p className="text-gray-400 mt-1">Manage matches for this round</p>
           </div>
-
           <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-md font-semibold hover:bg-blue-700 transition"
+            type="button"
+            onClick={() => setShowAddForm((prev) => !prev)}
+            className={`px-6 py-3 rounded-lg font-medium shadow-lg transition-all ${showAddForm
+              ? 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+              : 'bg-purple-600 text-white hover:bg-purple-700'
+              }`}
           >
-            Add Match
+            {showAddForm ? 'Cancel' : '+ Add Match'}
           </button>
-        </form>
-      )}
+        </div>
 
-      {matches.length === 0 ? (
-        <p className="text-center text-gray-600">No matches found.</p>
-      ) : (
-        <ul className="space-y-4 max-w-3xl mx-auto">
-          {matches.map((match) => (
-            <li
-              key={match._id}
-              className="flex flex-col md:flex-row justify-between items-center border rounded-lg p-4 bg-gray-50 shadow-sm cursor-pointer"
-              onClick={() => {
-                if (editMatchId !== match._id) {
-                  navigate(`/tournaments/${tournamentId}/rounds/${roundId}/matches/${match._id}`);
-                }
-              }}
-              title={`View details for Match ${match.matchNo}`}
-            >
-              {editMatchId === match._id ? (
-                <div className="flex flex-col md:flex-row md:space-x-4 items-center w-full md:w-auto">
+        {showAddForm && (
+          <div className="mb-8 p-8 border border-slate-700/50 rounded-xl bg-slate-800/50 backdrop-blur-sm shadow-xl animate-in fade-in slide-in-from-top-4 duration-300">
+            <h3 className="text-xl font-bold mb-6 text-white border-b border-slate-700 pb-4">Add New Match</h3>
+            <form onSubmit={handleAddMatch} className="space-y-6">
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label htmlFor="newMatchNo" className="block mb-2 text-sm font-medium text-gray-400">
+                    Match Number
+                  </label>
                   <input
+                    id="newMatchNo"
                     type="number"
-                    min={1}
-                    value={editMatchNo}
-                    onChange={(e) => setEditMatchNo(parseInt(e.target.value) || 1)}
-                    className="p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 mb-2 md:mb-0 w-full md:w-24"
+
+                    value={newMatchNo}
+                    onChange={(e) => setNewMatchNo(parseInt(e.target.value))}
+                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+                    required
                   />
+                </div>
+
+                <div>
+                  <label htmlFor="newTime" className="block mb-2 text-sm font-medium text-gray-400">
+                    Match Time
+                  </label>
                   <input
+                    id="newTime"
                     type="time"
-                    value={editTime}
-                    onChange={(e) => setEditTime(e.target.value)}
-                    className="p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 mb-2 md:mb-0 w-full md:w-28"
+                    value={newTime}
+                    onChange={(e) => setNewTime(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+                    required
                   />
+                </div>
+
+                <div>
+                  <label htmlFor="newMap" className="block mb-2 text-sm font-medium text-gray-400">
+                    Map Name
+                  </label>
                   <select
-                    value={editMap}
-                    onChange={(e) => setEditMap(e.target.value)}
-                    className="p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 w-full md:w-48"
+                    id="newMap"
+                    value={newMap}
+                    onChange={(e) => setNewMap(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all appearance-none"
+                    required
                   >
-                    <option value="">Select a map</option>
-                    <option value="Erangel">Erangel</option>
-                    <option value="Miramar">Miramar</option>
-                    <option value="Sanhok">Sanhok</option>
-                     <option value="Rondo">Rondo</option>
-                       <option value="Bermuda">Bermuda</option>
-                           <option value="Alpine">Alpine</option>
-                              <option value="Nexterra">nexterra</option>
-                                     <option value="Purgatory">Purgatory</option>
-                                       <option value="Kalahari">Kalahari</option>
+                    <option value="" className="bg-slate-800">Select a map</option>
+                    <option value="Erangel" className="bg-slate-800">Erangel</option>
+                    <option value="Miramar" className="bg-slate-800">Miramar</option>
+                    <option value="Sanhok" className="bg-slate-800">Sanhok</option>
+                    <option value="Rondo" className="bg-slate-800">Rondo</option>
+                    <option value="Bermuda" className="bg-slate-800">Bermuda</option>
+                    <option value="Alpine" className="bg-slate-800">Alpine</option>
+                    <option value="Nexterra" className="bg-slate-800">Nexterra</option>
+                    <option value="Purgatory" className="bg-slate-800">Purgatory</option>
+                    <option value="Kalahari" className="bg-slate-800">Kalahari</option>
                   </select>
-                  <div className="flex space-x-2 mt-2 md:mt-0">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUpdateMatch(match._id);
-                      }}
-                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
-                    >
-                      Save
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditMatchId(null);
-                      }}
-                      className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400 transition"
-                    >
-                      Cancel
-                    </button>
-                  </div>
                 </div>
-              ) : (
-                <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center">
-                  <div>
-                    <h3 className="text-lg font-semibold">Match {match.matchNo}</h3>
-                    <p className="text-gray-700">Map: {match.map}</p>
-                    <p className="text-gray-700">Time: {match.time}</p>
-                    {match.groups && match.groups.length > 0 && (
-                      <p className="text-gray-600 mt-1">
-                        Groups: {match.groups.map((g) => g.groupName).join(', ')}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex space-x-2 mt-4 md:mt-0">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        startEdit(match);
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+              </div>
+
+              <div>
+                <p className="block mb-3 text-sm font-medium text-gray-400">Select Groups</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {groups.map((group) => (
+                    <label
+                      key={group._id}
+                      className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${selectedGroupIds.includes(group._id)
+                        ? 'bg-purple-600/20 border-purple-500 text-white'
+                        : 'bg-slate-900/30 border-slate-700 text-gray-400 hover:bg-slate-800'
+                        }`}
                     >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteMatch(match._id);
-                      }}
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
-                    >
-                      Delete
-                    </button>
-                  </div>
+                      <input
+                        type="checkbox"
+                        value={group._id}
+                        checked={selectedGroupIds.includes(group._id)}
+                        onChange={() => {
+                          if (selectedGroupIds.includes(group._id)) {
+                            setSelectedGroupIds(selectedGroupIds.filter((id) => id !== group._id));
+                          } else {
+                            setSelectedGroupIds([...selectedGroupIds, group._id]);
+                          }
+                        }}
+                        className="mr-3 w-4 h-4 rounded border-gray-600 text-purple-600 focus:ring-purple-500 bg-slate-700"
+                      />
+                      <span className="truncate">{group.groupName}</span>
+                    </label>
+                  ))}
                 </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={isCreating}
+                className={`w-full py-3 rounded-lg font-bold shadow-lg transition-all mt-4 flex items-center justify-center gap-2 ${isCreating
+                  ? 'bg-purple-600/50 cursor-not-allowed text-gray-300'
+                  : 'bg-purple-600 text-white hover:bg-purple-700'
+                  }`}
+              >
+                {isCreating ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Creating...
+                  </>
+                ) : (
+                  'Create Match'
+                )}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {matches.length === 0 ? (
+          <div className="text-center py-16 bg-slate-800/30 rounded-xl border border-slate-700/30 border-dashed">
+            <p className="text-xl text-gray-500 font-medium">No matches scheduled yet.</p>
+            <p className="text-gray-600 mt-2">Click "Add Match" to get started.</p>
+          </div>
+        ) : (
+          <ul className="space-y-4 pb-12">
+            {matches.map((match) => (
+              <li
+                key={match._id}
+                onClick={() => {
+                  if (editMatchId !== match._id) {
+                    navigate(`/tournaments/${tournamentId}/rounds/${roundId}/matches/${match._id}`);
+                  }
+                }}
+                className="group relative bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 hover:border-slate-600/50 rounded-xl p-6 transition-all duration-200 backdrop-blur-sm shadow-lg hover:shadow-xl cursor-pointer"
+              >
+                {editMatchId === match._id ? (
+                  <div className="flex flex-col gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <input
+                        type="number"
+                        min={1}
+                        value={editMatchNo}
+                        onChange={(e) => setEditMatchNo(parseInt(e.target.value) || 1)}
+                        className="px-4 py-2 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+                        placeholder="Match No"
+                      />
+                      <input
+                        type="time"
+                        value={editTime}
+                        onChange={(e) => setEditTime(e.target.value)}
+                        className="px-4 py-2 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+                      />
+                      <select
+                        value={editMap}
+                        onChange={(e) => setEditMap(e.target.value)}
+                        className="px-4 py-2 bg-slate-900/50 border border-slate-600/50 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+                      >
+                        <option value="" className="bg-slate-800">Select Map</option>
+                        <option value="Erangel" className="bg-slate-800">Erangel</option>
+                        <option value="Miramar" className="bg-slate-800">Miramar</option>
+                        <option value="Sanhok" className="bg-slate-800">Sanhok</option>
+                        <option value="Rondo" className="bg-slate-800">Rondo</option>
+                        <option value="Bermuda" className="bg-slate-800">Bermuda</option>
+                        <option value="Alpine" className="bg-slate-800">Alpine</option>
+                        <option value="Nexterra" className="bg-slate-800">Nexterra</option>
+                        <option value="Purgatory" className="bg-slate-800">Purgatory</option>
+                        <option value="Kalahari" className="bg-slate-800">Kalahari</option>
+                      </select>
+                    </div>
+                    <div className="flex justify-end gap-3">
+                      <button
+                        onClick={() => setEditMatchId(null)}
+                        className="px-4 py-2 bg-slate-700 text-gray-300 rounded-lg hover:bg-slate-600 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleUpdateMatch(match._id)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-lg"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="px-3 py-1 bg-purple-500/20 text-purple-300 text-xs font-bold rounded-full border border-purple-500/30">
+                          MATCH {match.matchNo}
+                        </span>
+                        <span className="text-gray-400 text-sm flex items-center gap-1">
+                          🕒 {match.time}
+                        </span>
+                      </div>
+
+                      <h3 className="text-xl font-bold text-white mb-1">{match.map}</h3>
+
+                      {match.groups && match.groups.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {match.groups.map((g) => (
+                            <span key={g._id} className="px-2 py-1 bg-slate-700/50 text-gray-300 text-xs rounded border border-slate-600/30">
+                              {g.groupName}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startEdit(match);
+                        }}
+                        className="px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteMatch(match._id);
+                        }}
+                        className="px-4 py-2 bg-red-600/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-600 hover:text-white transition-all"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 };
