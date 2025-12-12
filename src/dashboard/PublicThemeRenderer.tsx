@@ -27,6 +27,7 @@ import TeamH2H from '../Themes/Theme1/off-screen/teamh2h.tsx'
 import ZoneClose from '../Themes/Theme1/on-screen/zoneClose.tsx'
 import Intro from '../Themes/Theme1/on-screen/intro.tsx'
 import MapPreview from '../Themes/Theme1/off-screen/mapPreview.tsx'
+import Slots from '../Themes/Theme1/off-screen/slots.tsx'
 
 // Theme2 imports
 import Lower2 from '../Themes/Theme2/on-screen/Lower.tsx';
@@ -51,6 +52,7 @@ import MatchSummary2 from '../Themes/Theme2/off-screen/MatchSummary.tsx'
 import PlayerH2H2 from '../Themes/Theme2/off-screen/playerh2h.tsx'
 import TeamH2H2 from '../Themes/Theme2/off-screen/teamh2h.tsx'
 import ZoneClose2 from '../Themes/Theme2/on-screen/zoneClose.tsx'
+import Slots2 from '../Themes/Theme1/off-screen/slots.tsx'
 
 
 interface Tournament {
@@ -143,6 +145,7 @@ const PublicThemeRenderer: React.FC = () => {
   const ZoneCloseComp = isTheme1 ? ZoneClose : ZoneClose2;
   const IntroComp = Intro; // Intro is only in Theme1 for now
   const MapPreviewComp = MapPreview; // MapPreview is only in Theme1 for now
+  const SlotsComp = isTheme1 ? Slots : Slots2;
 
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [round, setRound] = useState<Round | null>(null);
@@ -167,7 +170,7 @@ const PublicThemeRenderer: React.FC = () => {
         const needsOverallData = ['OverAllData', 'LiveStats', '1stRunnerUp', '2ndRunnerUp', 'EventMvp'].includes(view);
         const needsMatches = ['OverAllData', 'Schedule'].includes(view);
         const needsMatchDatas = ['OverAllData', 'Schedule'].includes(view);
-        const needsMatchData = ['Upper', 'Dom', 'Alerts', 'LiveStats', 'LiveFrags', 'MatchData', 'MatchFragrs', 'WwcdSummary', 'WwcdStats', 'playerH2H', 'intro', 'mapPreview'].includes(view);
+        const needsMatchData = ['Upper', 'Dom', 'Alerts', 'LiveStats', 'LiveFrags', 'MatchData', 'MatchFragrs', 'WwcdSummary', 'WwcdStats', 'playerH2H', 'intro', 'mapPreview', 'slots'].includes(view);
 
         // Always fetch basic data
         const basePromises: Promise<any>[] = [
@@ -368,6 +371,8 @@ const PublicThemeRenderer: React.FC = () => {
           return <IntroComp tournament={tournament} round={round} match={match} matchData={matchData} />
         case 'mapPreview':
           return <MapPreviewComp tournament={tournament} round={round} match={match} matchData={matchData} />
+        case 'slots':
+          return <SlotsComp tournament={tournament} round={round} match={match} matchData={matchData} />
       default:
         return (
           <div style={{

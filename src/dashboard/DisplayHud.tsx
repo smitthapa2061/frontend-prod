@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import api from '../login/api.tsx';
-
+import PollingManager from './isPolling.tsx';
 import { FaDiscord, FaWhatsapp } from 'react-icons/fa';
 
 interface Tournament {
@@ -269,7 +269,7 @@ const DisplayHud: React.FC = () => {
 
       <main className="max-w-4xl mx-auto px-6 py-8">
         <h2 className="text-3xl font-bold text-white mb-8 text-center">Tournament Control Center</h2>
-
+<PollingManager/>
         <div className="space-y-4">
           {tournaments.map(t => (
             <div key={t._id} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all">
@@ -372,7 +372,7 @@ const DisplayHud: React.FC = () => {
                               </div>
 
                               <div className="flex flex-wrap gap-2">
-                                {['MatchSummary', 'Lower', 'Upper', 'Dom', 'LiveStats', 'LiveFrags', 'Alerts', 'MatchData', 'MatchFragrs', 'CommingUpNext', 'OverAllData', 'OverallFrags', 'WwcdStats', 'WwcdSummary', 'playerH2H', 'TeamH2H', 'Champions', '1stRunnerUp', '2ndRunnerUp', 'EventMvp', 'ZoneClose', 'intro', 'mapPreview'].map((viewName) => (
+                                {['MatchSummary', 'Lower', 'Upper', 'Dom', 'LiveStats', 'LiveFrags', 'Alerts', 'MatchData', 'MatchFragrs', 'CommingUpNext', 'OverAllData', 'OverallFrags', 'WwcdStats', 'WwcdSummary', 'playerH2H', 'TeamH2H', 'Champions', '1stRunnerUp', '2ndRunnerUp', 'EventMvp', 'ZoneClose', 'intro', 'mapPreview', 'slots'].map((viewName) => (
                                   <button
                                     key={viewName}
                                     className="bg-slate-700 hover:bg-purple-600 text-white text-xs font-medium px-3 py-2 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-slate-600 hover:border-purple-500"
