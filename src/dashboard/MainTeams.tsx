@@ -19,7 +19,7 @@ interface Team {
   players: Player[];
 }
 
-const API_URL = 'https://backend-prod-bs4c.onrender.com/api';
+const API_URL = 'https://backend-prod-03dl.onrender.com/api';
 const EMPTY_SET = new Set<string>();
 
 const TeamForm = React.memo(({
