@@ -52,7 +52,34 @@ import MatchSummary2 from '../Themes/Theme2/off-screen/MatchSummary.tsx'
 import PlayerH2H2 from '../Themes/Theme2/off-screen/playerh2h.tsx'
 import TeamH2H2 from '../Themes/Theme2/off-screen/teamh2h.tsx'
 import ZoneClose2 from '../Themes/Theme2/on-screen/zoneClose.tsx'
-import Slots2 from '../Themes/Theme1/off-screen/slots.tsx'
+import Slots2 from '../Themes/Theme2/off-screen/slots.tsx'
+
+// Theme3 imports
+import Lower3 from '../Themes/Theme3/on-screen/Lower.tsx';
+import Upper3 from '../Themes/Theme3/on-screen/Upper.tsx';
+import Dom3 from '../Themes/Theme3/on-screen/Dom.tsx';
+import Alerts3 from '../Themes/Theme3/on-screen/Alerts.tsx';
+import LiveStats3 from '../Themes/Theme3/on-screen/LiveStats.tsx';
+import LiveFrags3 from '../Themes/Theme3/on-screen/LiveFrags.tsx';
+import MatchData3 from '../Themes/Theme3/off-screen/MatchData.tsx';
+import MatchFragrs3 from '../Themes/Theme3/off-screen/MatchFragrs.tsx';
+import WwcdSummary3 from '../Themes/Theme3/off-screen/WwcdSummary.tsx';
+import WwcdStats3 from '../Themes/Theme3/off-screen/WwcdStats.tsx'
+import OverallData3 from   '../Themes/Theme3/off-screen/OverAllData.tsx'
+import OverallFrags3 from '../Themes/Theme3/off-screen/OverallFrags.tsx'
+import Schedule3 from '../Themes/Theme3/off-screen/Schedule.tsx'
+import CommingUpNext3 from '../Themes/Theme3/off-screen/CommingUpNext.tsx'
+import Champions3 from '../Themes/Theme3/off-screen/Champions.tsx'
+import FirstRunnerUp3 from '../Themes/Theme3/off-screen/1stRunnerUp.tsx'
+import SecondRunnerUp3 from '../Themes/Theme3/off-screen/2ndRunnerUp.tsx'
+import EventMvp3 from '../Themes/Theme3/off-screen/EventMvp.tsx'
+import MatchSummary3 from '../Themes/Theme3/off-screen/MatchSummary.tsx'
+import PlayerH2H3 from '../Themes/Theme3/off-screen/playerh2h.tsx'
+import TeamH2H3 from '../Themes/Theme3/off-screen/teamh2h.tsx'
+import ZoneClose3 from '../Themes/Theme3/on-screen/zoneClose.tsx'
+import Intro3 from '../Themes/Theme3/on-screen/intro.tsx'
+import MapPreview3 from '../Themes/Theme3/off-screen/mapPreview.tsx'
+import Slots3 from '../Themes/Theme3/off-screen/slots.tsx'
 
 
 interface Tournament {
@@ -120,32 +147,119 @@ const PublicThemeRenderer: React.FC = () => {
   const followSelected = (searchParams.get('followSelected') || 'false').toLowerCase() === 'true';
   const selectedScheduleMatchIds = searchParams.get('scheduleMatches')?.split(',') || [];
 
-  const isTheme1 = theme === 'Theme1';
-  const LowerComp = isTheme1 ? Lower : Lower2;
-  const UpperComp = isTheme1 ? Upper : Upper2;
-  const DomComp = isTheme1 ? Dom : Dom2;
-  const AlertsComp = isTheme1 ? Alerts : Alerts2;
-  const LiveStatsComp = isTheme1 ? LiveStats : LiveStats2;
-  const LiveFragsComp = isTheme1 ? LiveFrags : LiveFrags2;
-  const MatchDataComp = isTheme1 ? MatchData : MatchData2;
-  const MatchFragrsComp = isTheme1 ? MatchFragrs : MatchFragrs2;
-  const WwcdSummaryComp = isTheme1 ? WwcdSummary : WwcdSummary2;
-  const WwcdStatsComp = isTheme1 ? WwcdStats : WwcdStats2;
-  const OverallDataComp = isTheme1 ? OverallData : OverallData2;
-  const OverallFragsComp = isTheme1 ? OverallFrags : OverallFrags2;
-  const ScheduleComp = isTheme1 ? Schedule : Schedule2;
-  const CommingUpNextComp = isTheme1 ? CommingUpNext : CommingUpNext2;
-  const ChampionsComp = isTheme1 ? Champions : Champions2;
-  const FirstRunnerUpComp = isTheme1 ? FirstRunnerUp : FirstRunnerUp2;
-  const SecondRunnerUpComp = isTheme1 ? SecondRunnerUp : SecondRunnerUp2;
-  const EventMvpComp = isTheme1 ? EventMvp : EventMvp2;
-  const MatchSummaryComp = isTheme1 ? MatchSummary : MatchSummary2;
-  const PlayerH2HComp = isTheme1 ? PlayerH2H : PlayerH2H2;
-  const TeamH2HComp = isTheme1 ? TeamH2H : TeamH2H2;
-  const ZoneCloseComp = isTheme1 ? ZoneClose : ZoneClose2;
-  const IntroComp = Intro; // Intro is only in Theme1 for now
-  const MapPreviewComp = MapPreview; // MapPreview is only in Theme1 for now
-  const SlotsComp = isTheme1 ? Slots : Slots2;
+  const themes = {
+    Theme1: {
+      Lower: Lower,
+      Upper: Upper,
+      Dom: Dom,
+      Alerts: Alerts,
+      LiveStats: LiveStats,
+      LiveFrags: LiveFrags,
+      MatchData: MatchData,
+      MatchFragrs: MatchFragrs,
+      WwcdSummary: WwcdSummary,
+      WwcdStats: WwcdStats,
+      OverallData: OverallData,
+      OverallFrags: OverallFrags,
+      Schedule: Schedule,
+      CommingUpNext: CommingUpNext,
+      Champions: Champions,
+      FirstRunnerUp: FirstRunnerUp,
+      SecondRunnerUp: SecondRunnerUp,
+      EventMvp: EventMvp,
+      MatchSummary: MatchSummary,
+      PlayerH2H: PlayerH2H,
+      TeamH2H: TeamH2H,
+      ZoneClose: ZoneClose,
+      Intro: Intro,
+      MapPreview: MapPreview,
+      Slots: Slots,
+    },
+    Theme2: {
+      Lower: Lower2,
+      Upper: Upper2,
+      Dom: Dom2,
+      Alerts: Alerts2,
+      LiveStats: LiveStats2,
+      LiveFrags: LiveFrags2,
+      MatchData: MatchData2,
+      MatchFragrs: MatchFragrs2,
+      WwcdSummary: WwcdSummary2,
+      WwcdStats: WwcdStats2,
+      OverallData: OverallData2,
+      OverallFrags: OverallFrags2,
+      Schedule: Schedule2,
+      CommingUpNext: CommingUpNext2,
+      Champions: Champions2,
+      FirstRunnerUp: FirstRunnerUp2,
+      SecondRunnerUp: SecondRunnerUp2,
+      EventMvp: EventMvp2,
+      MatchSummary: MatchSummary2,
+      PlayerH2H: PlayerH2H2,
+      TeamH2H: TeamH2H2,
+      ZoneClose: ZoneClose2,
+      Intro: Intro, // Use Theme1's Intro for Theme2
+      MapPreview: MapPreview, // Use Theme1's MapPreview for Theme2
+      Slots: Slots2,
+    },
+    Theme3: {
+      Lower: Lower3,
+      Upper: Upper3,
+      Dom: Dom3,
+      Alerts: Alerts3,
+      LiveStats: LiveStats3,
+      LiveFrags: LiveFrags3,
+      MatchData: MatchData3,
+      MatchFragrs: MatchFragrs3,
+      WwcdSummary: WwcdSummary3,
+      WwcdStats: WwcdStats3,
+      OverallData: OverallData3,
+      OverallFrags: OverallFrags3,
+      Schedule: Schedule3,
+      CommingUpNext: CommingUpNext3,
+      Champions: Champions3,
+      FirstRunnerUp: FirstRunnerUp3,
+      SecondRunnerUp: SecondRunnerUp3,
+      EventMvp: EventMvp3,
+      MatchSummary: MatchSummary3,
+      PlayerH2H: PlayerH2H3,
+      TeamH2H: TeamH2H3,
+      ZoneClose: ZoneClose3,
+      Intro: Intro3,
+      MapPreview: MapPreview3,
+      Slots: Slots3,
+    },
+  };
+
+  const activeTheme = themes[theme as 'Theme1' | 'Theme2' | 'Theme3'] || themes['Theme1'];
+
+  const {
+    Lower: LowerComp,
+    Upper: UpperComp,
+    Dom: DomComp,
+    Alerts: AlertsComp,
+    LiveStats: LiveStatsComp,
+    LiveFrags: LiveFragsComp,
+    MatchData: MatchDataComp,
+    MatchFragrs: MatchFragrsComp,
+    WwcdSummary: WwcdSummaryComp,
+    WwcdStats: WwcdStatsComp,
+    OverallData: OverallDataComp,
+    OverallFrags: OverallFragsComp,
+    Schedule: ScheduleComp,
+    CommingUpNext: CommingUpNextComp,
+    Champions: ChampionsComp,
+    FirstRunnerUp: FirstRunnerUpComp,
+    SecondRunnerUp: SecondRunnerUpComp,
+    EventMvp: EventMvpComp,
+    MatchSummary: MatchSummaryComp,
+    PlayerH2H: PlayerH2HComp,
+    TeamH2H: TeamH2HComp,
+    ZoneClose: ZoneCloseComp,
+    Intro: IntroComp,
+    MapPreview: MapPreviewComp,
+    Slots: SlotsComp,
+  } = activeTheme;
 
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [round, setRound] = useState<Round | null>(null);

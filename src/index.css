@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+
+
+
+@font-face {
+    font-family: "PaybAck";
+    src: url("./assets/fonts/PaybAck.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* New Awaking font */
+@font-face {
+    font-family: "Awaking";
+    src: url("./assets/fonts/AWAKENNING.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 /* Prevent white flash during page loads */
 html,
 body,

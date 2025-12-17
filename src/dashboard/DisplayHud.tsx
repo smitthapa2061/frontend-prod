@@ -31,7 +31,7 @@ const DisplayHud: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [pollingKey, setPollingKey] = useState(0); // Force re-render polling component
   // Theme selection per tournament
-  const availableThemes = ['Theme1', 'Theme2-(freefire)'];
+  const availableThemes = ['Theme1', 'Theme2', 'Theme3'];
   const [selectedThemeMap, setSelectedThemeMap] = useState<Record<string, string>>(() => {
     try {
       const saved = localStorage.getItem('selectedThemeMap');

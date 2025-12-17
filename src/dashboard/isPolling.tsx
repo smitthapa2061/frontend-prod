@@ -21,17 +21,14 @@ const PollingManager: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
-  const [buttonState, setButtonState] = useState(false); // Track ON/OFF visually
+  const [buttonState, setButtonState] = useState(false);
 
   // --- Socket setup ---
   useEffect(() => {
     const socketManager = SocketManager.getInstance();
     const socket = socketManager.connect();
 
-    console.log("Socket connected");
-
     socket.on("pollingStatusUpdated", (updated: Selection) => {
-      console.log("Socket: pollingStatusUpdated received:", updated);
       setSelections((prev) => {
         const newSelections = prev.map((s) =>
           s._id === updated._id
@@ -39,13 +36,11 @@ const PollingManager: React.FC = () => {
             : s
         );
 
-        // Update button state if the updated selection is the active match
         if (updated._id === activeMatchId) {
           const activeSelection = newSelections.find(s => s._id === activeMatchId);
           const hasApiEnabled = typeof activeSelection?.roundId === 'object' ? activeSelection.roundId.apiEnable : false;
           const newButtonState = updated.isPollingActive && hasApiEnabled;
           setButtonState(newButtonState);
-          console.log("Button state updated to:", newButtonState, "for match:", updated._id, "api enabled:", hasApiEnabled, "polling active:", updated.isPollingActive);
         }
 
         return newSelections;
@@ -53,11 +48,8 @@ const PollingManager: React.FC = () => {
     });
 
     socket.on("matchSelected", ({ selected }: { selected: Selection }) => {
-      console.log("Socket: matchSelected event received:", selected);
       setSelections((prev) => {
-        // First, set all selections to not selected
         const updatedPrev = prev.map(s => ({ ...s, isSelected: false }));
-
         const index = updatedPrev.findIndex((s) => s._id === selected._id);
         if (index !== -1) {
           updatedPrev[index] = { ...selected, isSelected: true };
@@ -67,17 +59,12 @@ const PollingManager: React.FC = () => {
         }
       });
 
-      // Set active match to the newly selected match
-      console.log("Setting active match to:", selected._id, "polling active:", selected.isPollingActive);
       setActiveMatchId(selected._id);
-      // Set button state based on polling status and API enable
       const hasApiEnabled = typeof selected.roundId === 'object' ? selected.roundId.apiEnable : false;
       setButtonState(selected.isPollingActive && hasApiEnabled);
-      console.log("Button state set to:", selected.isPollingActive && hasApiEnabled, "for new match:", selected._id);
     });
 
-    socket.on("matchDeselected", ({ matchId, tournamentId, roundId, userId }: { matchId: string, tournamentId: string, roundId: string, userId: string }) => {
-      console.log("Socket: matchDeselected received:", { matchId, tournamentId, roundId, userId });
+    socket.on("matchDeselected", ({ matchId }: { matchId: string }) => {
       setSelections((prev) =>
         prev.map((s) =>
           s._id === matchId ? { ...s, isSelected: false, isPollingActive: false } : s
@@ -85,26 +72,22 @@ const PollingManager: React.FC = () => {
       );
 
       if (activeMatchId === matchId) {
-        console.log("Clearing active match due to deselection");
         setActiveMatchId(null);
       }
     });
 
-    socket.on("matchDeleted", ({ matchId, userId }: { matchId: string, userId: string }) => {
-      console.log("Socket: matchDeleted received:", { matchId, userId });
+    socket.on("matchDeleted", ({ matchId }: { matchId: string }) => {
       setSelections((prev) => prev.filter((s) => s._id !== matchId));
 
       if (activeMatchId === matchId) {
-        console.log("Clearing active match due to deletion");
         setActiveMatchId(null);
       }
     });
 
     return () => {
-      console.log("Socket disconnected");
       socketManager.disconnect();
     };
-   }, [activeMatchId]);
+  }, [activeMatchId]);
 
   // --- Fetch initial selections ---
   useEffect(() => {
@@ -116,7 +99,6 @@ const PollingManager: React.FC = () => {
         );
         setSelections(uniqueSelections);
         if (uniqueSelections.length > 0) {
-          // Prioritize API-enabled rounds for initial selection
           const apiEnabledSelections = uniqueSelections.filter(s =>
             typeof s.roundId === 'object' ? s.roundId.apiEnable : false
           );
@@ -125,10 +107,8 @@ const PollingManager: React.FC = () => {
             : (uniqueSelections.find(s => s.isSelected) || uniqueSelections[0]);
 
           setActiveMatchId(firstSelected._id);
-          // Set initial button state based on polling status and API enable
           const hasApiEnabled = typeof firstSelected.roundId === 'object' ? firstSelected.roundId.apiEnable : false;
           setButtonState(firstSelected.isPollingActive && hasApiEnabled);
-          console.log("Initial active match:", firstSelected._id, "round:", typeof firstSelected.roundId === 'object' ? firstSelected.roundId.roundName : 'unknown', "api enabled:", hasApiEnabled);
         }
       })
       .catch(console.error)
@@ -137,14 +117,8 @@ const PollingManager: React.FC = () => {
 
   // --- Reset button state when active match changes ---
   useEffect(() => {
-    console.log("Active match changed to:", activeMatchId, "setting button to: false");
     setButtonState(false);
   }, [activeMatchId]);
-
-  // --- Force re-render when buttonState changes ---
-  useEffect(() => {
-    console.log("Button state is now:", buttonState);
-  }, [buttonState]);
 
   // --- Toggle polling for current active match ---
   const handleTogglePollingForActive = async () => {
@@ -153,16 +127,11 @@ const PollingManager: React.FC = () => {
     const match = selections.find((s) => s._id === activeMatchId);
     if (!match) return;
 
-    // Check if API is enabled for this round
     const hasApiEnabled = typeof match.roundId === 'object' ? match.roundId.apiEnable : false;
-    const roundId = typeof match.roundId === 'object' ? match.roundId._id : match.roundId;
-    if (!hasApiEnabled) {
-      console.log("Cannot toggle polling: API not enabled for round", roundId, "match", match.matchId);
-      return;
-    }
+    if (!hasApiEnabled) return;
 
     const currentMatch = selections.find((s) => s._id === activeMatchId);
-    const newState = !currentMatch?.isPollingActive; // use actual polling state from DB
+    const newState = !currentMatch?.isPollingActive;
     setButtonState(newState);
 
     setUpdating(true);
@@ -173,7 +142,6 @@ const PollingManager: React.FC = () => {
         { isPollingActive: newState }
       );
 
-      // Update selections to match DB
       setSelections((prev) =>
         prev.map((s) =>
           s._id === activeMatchId ? { ...s, isPollingActive: newState } : s
@@ -181,35 +149,78 @@ const PollingManager: React.FC = () => {
       );
     } catch (err) {
       console.error("Failed to update polling:", err);
-      setButtonState(!newState); // rollback button visually
+      setButtonState(!newState);
     } finally {
       setUpdating(false);
     }
   };
 
-  if (loading) return <p>Loading selections...</p>;
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 rounded-xl border border-gray-700">
+        <div className="w-4 h-4 border-2 border-gray-600 border-t-purple-500 rounded-full animate-spin"></div>
+        <span className="text-gray-400 text-sm">Loading...</span>
+      </div>
+    );
+  }
+
   if (!activeMatchId) return null;
 
+  const activeSelection = selections.find(s => s._id === activeMatchId);
+  const hasApiEnabled = activeSelection && typeof activeSelection.roundId === 'object' ? activeSelection.roundId.apiEnable : false;
+
   return (
-    <div className="p-4">
+    <div className="flex items-center gap-3">
+      {/* Status Indicator */}
+      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${buttonState
+          ? 'bg-green-900/20 border-green-500/30'
+          : 'bg-gray-800/50 border-gray-700'
+        }`}>
+        <div className={`w-2 h-2 rounded-full ${buttonState
+            ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)] animate-pulse'
+            : 'bg-gray-500'
+          }`}></div>
+        <span className={`text-xs font-medium uppercase tracking-wider ${buttonState ? 'text-green-400' : 'text-gray-500'
+          }`}>
+          {buttonState ? 'LIVE' : 'PAUSED'}
+        </span>
+      </div>
+
+      {/* Toggle Button */}
       <button
         onClick={handleTogglePollingForActive}
-        disabled={updating}
-        style={{
-          padding: "10px 20px",
-          backgroundColor: buttonState ? "green" : "red",
-          color: "white",
-          border: "none",
-          borderRadius: "5px",
-          cursor: "pointer",
-        }}
+        disabled={updating || !hasApiEnabled}
+        className={`
+          relative flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200
+          ${!hasApiEnabled
+            ? 'bg-gray-800/50 text-gray-600 cursor-not-allowed border border-gray-700'
+            : buttonState
+              ? 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg shadow-green-900/30 hover:from-green-500 hover:to-green-600 active:scale-[0.98]'
+              : 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-900/30 hover:from-red-500 hover:to-red-600 active:scale-[0.98]'
+          }
+          ${updating ? 'opacity-70' : ''}
+        `}
+        title={!hasApiEnabled ? 'API not enabled for this round' : ''}
       >
-        {updating
-          ? "Updating..."
-          : buttonState
-          ? "Fetch DATA : ON"
-          : "Fetch DATA : OFF"}
+        {updating ? (
+          <>
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            <span>Updating...</span>
+          </>
+        ) : (
+          <>
+            {/* Toggle Icon */}
+            <div className={`relative w-10 h-5 rounded-full transition-colors ${buttonState ? 'bg-green-400' : 'bg-gray-600'}`}>
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${buttonState ? 'left-5' : 'left-0.5'}`}></div>
+            </div>
+            <span>Fetch Data</span>
+          </>
+        )}
       </button>
+
+      {!hasApiEnabled && (
+        <span className="text-xs text-yellow-500/70 italic">API disabled</span>
+      )}
     </div>
   );
 };
