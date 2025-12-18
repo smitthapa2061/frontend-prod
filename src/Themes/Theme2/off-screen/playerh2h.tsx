@@ -171,23 +171,12 @@ const PlayerH2H: React.FC<PlayerH2HProps> = ({ tournament, round, match }) => {
             <div className="text-[3rem] font-bebas text-black mb-[30px] w-[400px] flex justify-center bg-gradient-to-r from-[#FFD700] via-[#FFA500] to-[#FFD700]">{first.playerName}</div>
            
             
-            <div className="grid grid-cols-4 gap-0 w-[600px] text-center bg-[#000000b8] h-[200px] pt-[30px] top-[400px] absolute ">
+            <div className=" w-[600px] text-center bg-[#000000b8] h-[200px] pt-[0px] top-[400px] absolute ">
               <div>
-                <div className="text-[5rem] font-bebas text-yellow-300">{first.killNum}</div>
-                <div className="text-sm font-[Righteous]">KILLS</div>
+                <div className="text-[7rem] font-bebas text-yellow-300">{first.killNum}</div>
+                <div className="text-[2rem] font-[Righteous] mt-[-40px]">KILLS</div>
               </div>
-              <div>
-                <div className="text-[5rem] font-bebas text-yellow-300">{first.damage}</div>
-                <div className="text-sm font-[Righteous]">DAMAGE</div>
-              </div>
-              <div>
-                <div className="text-[5rem] font-bebas text-yellow-300">{first.knockouts}</div>
-                <div className="text-sm font-[Righteous]">KNOCKOUTS</div>
-              </div>
-              <div>
-                <div className="text-[5rem] font-bebas text-yellow-300">{first.assists}</div>
-                <div className="text-sm font-[Righteous]">ASSISTS</div>
-              </div>
+           
             </div>
           </div>
         </div>
@@ -212,31 +201,14 @@ const PlayerH2H: React.FC<PlayerH2HProps> = ({ tournament, round, match }) => {
               {second.playerName}
             </div>
 
-            <div className="grid grid-cols-4 gap-0 w-[600px] text-center bg-[#000000b8] h-[200px] pt-[30px] top-[400px] absolute">
+            <div className=" w-[600px] text-center bg-[#000000b8] h-[200px] pt-[0px] top-[400px] absolute">
               <div>
-                <div className="text-[5rem] font-bebas text-yellow-300">
+                <div className="text-[7rem] font-bebas text-yellow-300 ">
                   {second.killNum}
                 </div>
-                <div className="text-sm font-[Righteous]">KILLS</div>
+                <div className="text-[2rem] font-[Righteous] mt-[-40px]">KILLS</div>
               </div>
-              <div>
-                <div className="text-[5rem] font-bebas text-yellow-300">
-                  {second.damage}
-                </div>
-                <div className="text-sm font-[Righteous]">DAMAGE</div>
-              </div>
-              <div>
-                <div className="text-[5rem] font-bebas text-yellow-300">
-                  {second.knockouts}
-                </div>
-                <div className="text-sm font-[Righteous]">KNOCKOUTS</div>
-              </div>
-              <div>
-                <div className="text-[5rem] font-bebas text-yellow-300">
-                  {second.assists}
-                </div>
-                <div className="text-sm font-[Righteous]">ASSISTS</div>
-              </div>
+             
             </div>
           </div>
         </div>

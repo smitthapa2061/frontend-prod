@@ -22,6 +22,43 @@
     font-display: swap;
 }
 
+/* New Awaking font */
+@font-face {
+    font-family: "Supermolot";
+    src: url("./assets/fonts/Supermolot.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* New Awaking font */
+@font-face {
+    font-family: "Unisans";
+    src: url("./assets/fonts/Unisans.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* New Awaking font */
+@font-face {
+    font-family: "Tungsten";
+    src: url("./assets/fonts/Tungsten.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+
+/* New Awaking font */
+@font-face {
+    font-family: "Bebas";
+    src: url("./assets/fonts/Bebas.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 /* Prevent white flash during page loads */
 html,
 body,
