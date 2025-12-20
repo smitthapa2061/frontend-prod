@@ -424,7 +424,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
       <img
         src={
           player.picUrl ||
-          'https://res.cloudinary.com/dqckienxj/image/upload/v1735718663/defult_chach_apsjhc_jydubc.png'
+          '/def_char.png'
         }
         alt={player.playerName}
         className="w-full h-full"

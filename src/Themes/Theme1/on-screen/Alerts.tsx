@@ -525,7 +525,7 @@ const Alerts: React.FC<AlertsProps> = ({ tournament, round, match, matchData }) 
                 y={212}
                 width={138}
                 height={162}
-                xlinkHref={player.picUrl || "https://res.cloudinary.com/dqckienxj/image/upload/v1735762279/defult_chach_apsjhc_dwnd7n.png"}
+                xlinkHref={player.picUrl || "/def_char.png"}
                 preserveAspectRatio="xMidYMid slice"
               />
             
@@ -559,7 +559,7 @@ const Alerts: React.FC<AlertsProps> = ({ tournament, round, match, matchData }) 
           const team = currentAlertTeam;
           console.log('Team logo:', team?.teamLogo);
           if (team) {
-            return <motion.image xlinkHref={team.teamLogo || "https://res.cloudinary.com/dqckienxj/image/upload/v1730785916/default_ryi6uf_edmapm.png"} x={800 + 10} y={90 + 10} width={68} height={68} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0 }} />;
+            return <motion.image xlinkHref={team.teamLogo || "/def_logo.png"} x={800 + 10} y={90 + 10} width={68} height={68} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0 }} />;
           }
           return null;
         })()}

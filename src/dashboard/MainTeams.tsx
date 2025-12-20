@@ -19,7 +19,6 @@ interface Team {
   players: Player[];
 }
 
-const API_URL = 'https://backend-prod-03dl.onrender.com/api';
 const EMPTY_SET = new Set<string>();
 
 const TeamForm = React.memo(({
@@ -390,12 +389,12 @@ const FormContainer = React.memo(({
     try {
       const payload = { ...form, players: playersForm };
       if (editingTeamId) {
-        const res = await axios.put(`${API_URL}/teams/${editingTeamId}`, payload);
+        const res = await api.put(`/teams/${editingTeamId}`, payload);
         setTeams((prev) =>
           prev.map((team) => (team._id === editingTeamId ? res.data : team))
         );
       } else {
-        const res = await axios.post(`${API_URL}/teams`, payload);
+        const res = await api.post('/teams', payload);
         setTeams((prev) => [...prev, res.data]);
       }
       resetForm();
@@ -641,7 +640,7 @@ const Teams: React.FC = () => {
 
   const fetchTeams = async () => {
     try {
-      const res = await axios.get<Team[]>(`${API_URL}/teams`);
+      const res = await api.get<Team[]>('/teams');
       setTeams(res.data);
     } catch (err) {
       console.error('Fetch teams failed:', err);
@@ -669,7 +668,7 @@ const Teams: React.FC = () => {
     setTeams((prev) => prev.filter((team) => team._id !== id));
 
     try {
-      await axios.delete(`${API_URL}/teams/${id}`);
+      await api.delete(`/teams/${id}`);
     } catch (err) {
       alert('Failed to delete team');
       console.error(err);
@@ -689,7 +688,7 @@ const Teams: React.FC = () => {
 
     setDeletingPlayerIds((prev) => new Set(prev).add(playerId));
     try {
-      await axios.delete(`${API_URL}/teams/${teamId}/players/${playerId}`);
+      await api.delete(`/teams/${teamId}/players/${playerId}`);
 
       setTeams((prev) =>
         prev.map((team) =>
@@ -719,7 +718,7 @@ const Teams: React.FC = () => {
     const playerIdsArray = Array.from(selectedSet);
 
     try {
-      await axios.delete(`${API_URL}/teams/${teamId}/players`, {
+      await api.delete(`/teams/${teamId}/players`, {
         data: { playerIds: playerIdsArray },
       });
 
@@ -744,60 +743,62 @@ const Teams: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header/Navigation Bar - Matching Dashboard */}
-      <header className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <img
-                src="https://res.cloudinary.com/dqckienxj/image/upload/v1760081339/scoresync_logo.jpg_hsz7qz.png"
-                alt="ScoreSync Logo"
-                className="w-12 h-12 rounded-lg shadow-lg"
-              />
-              <h1 className="text-xl font-bold text-white">ScoreSync</h1>
-            </div>
-
-            {/* Navigation Buttons */}
-            <nav className="flex items-center gap-3">
-              <button
-                onClick={goToTournaments}
-                className="bg-slate-700 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-slate-600 transition-colors"
-              >
-                Tournaments
-              </button>
-              <button
-                onClick={goToAddTeams}
-                className="bg-purple-600 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                Add Teams
-              </button>
-              <button
-                onClick={goToDisplayHUD}
-                className="bg-slate-700 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-slate-600 transition-colors"
-              >
-                Display HUD
-              </button>
-            </nav>
-
-            {/* User Info */}
-            <div className="flex items-center gap-4">
-              {user && (
-                <span className="text-sm text-gray-300 font-medium">
-                  Admin: <span className="text-white">{user.username}</span>
-                </span>
-              )}
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <span>Help Desk</span>
-                <FaDiscord
-                  className="cursor-pointer text-2xl text-gray-300 hover:text-purple-400 transition-colors"
-                  onClick={() => window.open('https://discord.com/channels/623776491682922526/1426117227257663558', '_blank')}
-                />
+     <header className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-50">
+            <div className="max-w-7xl mx-auto px-6 py-4">
+              <div className="flex justify-between items-center">
+                {/* Logo */}
+                <div className="flex items-center gap-3">
+                  <img
+                    src="./logo.png"
+                    alt="ScoreSync Logo"
+                    className="w-[70px] h-[70px] rounded-lg shadow-lg"
+                  />
+                  <div>
+                  <h1 className="text-[1rem] font-bold text-white">ESPORTS MANAGEMENT</h1>
+                   <h1 className="text-[1rem] font-bold text-white">AND OVERLAY SOFTWARE</h1>
+                   </div>
+                </div>
+    
+                {/* Navigation Buttons */}
+                <nav className="flex items-center gap-3">
+                  <button
+                    onClick={() => (window.location.href = '/dashboard')}
+                    className="bg-purple-600 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    Tournaments
+                  </button>
+                  <button
+                    onClick={() => window.open('/teams', '_blank', 'noopener,noreferrer')}
+                    className="bg-slate-700 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-slate-600 transition-colors"
+                  >
+                    Add Teams
+                  </button>
+                  <button
+                    onClick={() => window.open('/displayhud', '_blank', 'noopener,noreferrer')}
+                    className="bg-slate-700 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:bg-slate-600 transition-colors"
+                  >
+                    Display HUD
+                  </button>
+                </nav>
+    
+                {/* User Info */}
+                <div className="flex items-center gap-4">
+                  {user && (
+                    <span className="text-sm text-gray-300 font-medium">
+                      Admin: <span className="text-white">{user.username}</span>
+                    </span>
+                  )}
+                  <div className="flex items-center gap-2 text-sm text-gray-300">
+                    <span>Help Desk</span>
+                    <FaDiscord
+                      className="cursor-pointer text-2xl text-gray-300 hover:text-purple-400 transition-colors"
+                      onClick={() => window.open('https://discord.com/channels/623776491682922526/1426117227257663558', '_blank')}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </header>
-
+          </header>
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Page Header */}

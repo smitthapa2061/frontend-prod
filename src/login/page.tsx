@@ -117,9 +117,11 @@ const Login: React.FC = () => {
           {/* Logo/Brand */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-lg bg-purple-600 mb-4 shadow-lg">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+              <img
+                src="./logo.png"
+                alt="ScoreSync Logo"
+                className="w-[70px] h-[70px] rounded-lg shadow-lg"
+              />
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
             <p className="text-gray-400 text-sm">Sign in to continue to ScoreSync</p>

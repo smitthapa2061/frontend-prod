@@ -215,7 +215,7 @@ const Schedule: React.FC<ScheduleProps> = ({ tournament, round, matches: propMat
                             <div className="absolute inset-0 flex items-center justify-center ">
                               
                               <img
-                                src={winningTeams[0].teamLogo || "https://res.cloudinary.com/dqckienxj/image/upload/v1727161652/default_nuloh2.png"}
+                                src={winningTeams[0].teamLogo || "/def_logo.png"}
                                 alt={winningTeams[0].teamTag}
                                 className="w-[200px] h-[200px] z-20"
                               />

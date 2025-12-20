@@ -315,7 +315,7 @@ useEffect(() => {
                 className='w-[70%] h-[70%] bg-white relative left-[240px] top-[-30px]'
               >
                 <img
-                  src={displayedPlayer.teamLogo || "https://res.cloudinary.com/dqckienxj/image/upload/v1759393783/default1_ypnvsb.png"}
+                  src={displayedPlayer.teamLogo || "/def_logo.png"}
                   alt={displayedPlayer.teamTag}
                   className="w-full h-full object-contain"
                 />
@@ -325,7 +325,7 @@ useEffect(() => {
             {/* Player Image */}
             <div className="w-[300px] h-[290px] relative top-[-110px]">
               <img
-                src={displayedPlayer.picUrl || 'https://res.cloudinary.com/dqckienxj/image/upload/v1735718663/defult_chach_apsjhc_jydubc.png'}
+                src={displayedPlayer.picUrl || '/def_char.png'}
                 alt={displayedPlayer.playerName}
                 className="w-full h-full"
               />

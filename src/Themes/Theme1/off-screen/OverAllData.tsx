@@ -235,7 +235,7 @@ const OverAllDataComponent: React.FC<OverAllDataProps> = ({ tournament, round, m
             {/* Logo */}
             <div className="w-[50px] flex items-center justify-center ml-[15px]">
               <img
-                src={team.teamLogo || "https://res.cloudinary.com/dqckienxj/image/upload/v1727161652/default_nuloh2.png"}
+                src={team.teamLogo || "/def_logo.png"}
                 alt={team.teamTag}
                 className="w-[100%]"
               />

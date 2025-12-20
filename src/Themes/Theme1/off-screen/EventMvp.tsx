@@ -230,7 +230,7 @@ const EventMvp: React.FC<EventMvpProps> = ({ tournament, round, overallData: pro
       {/* MVP Player Image in Center */}
       <div className="flex justify-center items-center relative top-[150px]">
         <img
-          src={mvp.picUrl || 'https://res.cloudinary.com/dqckienxj/image/upload/v1735718663/defult_chach_apsjhc_jydubc.png'}
+          src={mvp.picUrl || '/def_char.png'}
           alt={mvp.playerName}
           className="h-[900px] object-contain"
         />

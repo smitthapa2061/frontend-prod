@@ -413,13 +413,13 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
       <img
         src={
           player.picUrl ||
-          'https://res.cloudinary.com/dqckienxj/image/upload/v1735718663/defult_chach_apsjhc_jydubc.png'
+        "/def_char.png"
         }
         alt={player.playerName}
         className="w-full h-full"
         onError={(e) => {
           const target = e.target as HTMLImageElement;
-          target.src = 'https://res.cloudinary.com/dqckienxj/image/upload/v1735718663/defult_chach_apsjhc_jydubc.png';
+          target.src = '/def_char.png';
         }}
       />
     </div>
@@ -436,7 +436,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
       
       {/* Team Logo */}
       <div className='w-[40px]  relative left-[20px]'>
-        <img src={topTeam.teamLogo || 'https://res.cloudinary.com/dqckienxj/image/upload/v1759393783/default1_ypnvsb.png'} alt={topTeam.teamTag} className="w-full h-full " />
+        <img src={topTeam.teamLogo || "/def_logo.png"} alt={topTeam.teamTag} className="w-full h-full " />
       </div>
       <div className='w-[1px] h-[90%] bg-white relative left-[22px]'></div>
       {/* Team Tag */}
@@ -539,7 +539,7 @@ const LiveStats: React.FC<LiveStatsProps> = ({ tournament, round, match, matchDa
 
 <div className='w-[80px] relative left-[4px] h-[100%] ml-[40px]  bg-white '>
 
-  <img src={team.teamLogo || 'https://res.cloudinary.com/dqckienxj/image/upload/v1759393783/default1_ypnvsb.png'} alt="" />
+  <img src={team.teamLogo || "/def_logo.png"} alt="" className="w-full h-full object-contain" />
 </div>
 
 

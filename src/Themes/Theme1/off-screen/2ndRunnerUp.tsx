@@ -230,7 +230,7 @@ background: `linear-gradient(135deg, ${tournament.primaryColor || '#000'}, ${tou
       <img
         src={
           p.picUrl ||
-          'https://res.cloudinary.com/dqckienxj/image/upload/v1735718663/defult_chach_apsjhc_jydubc.png'
+          '/def_char.png'
         }
         alt={p.playerName}
         className="w-full h-full object-cover m-0 p-0"

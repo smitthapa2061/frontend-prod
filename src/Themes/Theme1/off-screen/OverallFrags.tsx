@@ -382,7 +382,7 @@ const OverallFrags: React.FC<OverallFragsProps> = ({ tournament, round }) => {
                   {/* Player Avatar */}
                   <div className="w-[300px] h-[300px] ml-[0px] absolute z-0">
                     <img
-                      src={player.picUrl || 'https://res.cloudinary.com/dqckienxj/image/upload/v1735718663/defult_chach_apsjhc_jydubc.png'}
+                      src={player.picUrl || '/def_char.png'}
                       alt={player.playerName}
                       className="w-full h-full "
                     />

@@ -208,11 +208,14 @@ const Dashboard: React.FC = () => {
             {/* Logo */}
             <div className="flex items-center gap-3">
               <img
-                src="https://res.cloudinary.com/dqckienxj/image/upload/v1760081339/scoresync_logo.jpg_hsz7qz.png"
+                src="./logo.png"
                 alt="ScoreSync Logo"
-                className="w-12 h-12 rounded-lg shadow-lg"
+                className="w-[70px] h-[70px] rounded-lg shadow-lg"
               />
-              <h1 className="text-xl font-bold text-white">ScoreSync</h1>
+              <div>
+              <h1 className="text-[1rem] font-bold text-white">ESPORTS MANAGEMENT</h1>
+               <h1 className="text-[1rem] font-bold text-white">AND OVERLAY SOFTWARE</h1>
+               </div>
             </div>
 
             {/* Navigation Buttons */}
